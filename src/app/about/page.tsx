@@ -1,3 +1,5 @@
+import { pageMetadata } from "@/lib/metadata";
+export const metadata = pageMetadata("About", "Meet Frontline Daily and learn about our independent public-interest journalism.", "/about");
 import Link from "next/link";
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";

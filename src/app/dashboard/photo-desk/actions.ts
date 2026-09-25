@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { normalizeCategory, isMainCategory } from "@/lib/categories";
 import { requireAdminUser } from "@/lib/auth";
 import {
   MAX_IMAGE_FILE_SIZE,
@@ -59,12 +60,12 @@ export async function savePhotoDeskAction(formData: FormData) {
   const storyId = readText(formData, "story_id");
   const intent = readText(formData, "intent");
   const title = readText(formData, "title");
-  const category = readText(formData, "category");
+  const category = normalizeCategory(readText(formData, "category"));
   const location = readOptionalText(formData, "location");
   const isBreaking = formData.get("is_breaking") === "on";
   const breakingLabel = readOptionalText(formData, "breaking_label");
 
-  if (!title || title.length < 3 || !category || category.length < 2) {
+  if (!title || title.length < 3 || !isMainCategory(category)) {
     redirectToDashboard("error=validation");
   }
 
@@ -117,7 +118,10 @@ export async function savePhotoDeskAction(formData: FormData) {
   let selectedStoryId = storyId;
 
   if (selectedStoryId) {
-    storyPayload.published_at = nextStatus === "published" ? new Date().toISOString() : null;
+    const { data: existing, error: loadError } = await supabase.from("stories")
+      .select("published_at").eq("id", selectedStoryId).eq("author_id", user.id).single();
+    if (loadError || !existing) redirectToDashboard("error=save-failed");
+    storyPayload.published_at = nextStatus === "published" ? existing.published_at ?? new Date().toISOString() : null;
 
     const { error: updateError } = await supabase
       .from("stories")

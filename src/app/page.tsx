@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
+import { normalizeCategory, categorySlug, isMainCategory } from "@/lib/categories";
+import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import Link from "next/link";
 import { StatePanel } from "@/components/StatePanel";
 import { SubscribeForm } from "@/components/SubscribeForm";
-import { formatCategoryLabel, slugifyCategory } from "@/lib/site";
+
 import { hasSupabaseEnv } from "@/lib/supabase/config";
 import { StoryCard } from "@/components/StoryCard";
 import { PhotoDeskCard } from "@/components/PhotoDeskCard";
@@ -13,6 +17,14 @@ export const dynamic = "force-dynamic";
 type HomePageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
+
+export function generateMetadata({ searchParams }: HomePageProps): Metadata {
+  const raw = readParam(searchParams?.category);
+  if (!raw) return pageMetadata(SITE_NAME, SITE_DESCRIPTION, "/", true);
+  const category = normalizeCategory(raw);
+  const known = isMainCategory(category);
+  return { ...pageMetadata(known ? category : "News archive", known ? `Latest ${category.toLowerCase()} reporting from ${SITE_NAME}.` : SITE_DESCRIPTION, `/?category=${encodeURIComponent(categorySlug(category))}`), ...(known ? {} : { robots: { index: false, follow: true } }) };
+}
 
 type BreakingStory = Pick<Story, "id" | "title" | "breaking_label">;
 
@@ -109,10 +121,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const latestCutoff = Date.now() - LATEST_NEWS_WINDOW_HOURS * 60 * 60 * 1000;
   const selectedCategory = readParam(searchParams?.category);
   const categoryLabel = selectedCategory
-    ? formatCategoryLabel(selectedCategory.replace(/-/g, " "))
+    ? normalizeCategory(selectedCategory.replace(/-/g, " "))
     : null;
   const visibleStories = selectedCategory
-    ? stories.filter((story) => slugifyCategory(story.category) === selectedCategory)
+    ? stories.filter((story) => categorySlug(normalizeCategory(story.category)) === categorySlug(normalizeCategory(selectedCategory)))
     : stories;
 
   const editorialStories = visibleStories.filter(
@@ -221,6 +233,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
 
       {/* Breaking News Marquee */}
+      {breakingStories.length > 0 && (
       <div className="bg-primary-container text-on-primary py-2 overflow-hidden flex items-center">
         <div className="px-3 sm:px-5 flex-shrink-0 flex items-center gap-2 border-r border-white/20 mr-3 sm:mr-4">
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-on-primary"></span>
@@ -243,7 +256,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       </div>
 
+      )}
       <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 md:py-12 overflow-hidden">
+        {!categoryLabel && <h1 className="sr-only">Frontline Daily — latest news</h1>}
         {categoryLabel && (
           <div className="mb-8 md:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6 border-b-2 border-primary/20 pb-4">
             <div>

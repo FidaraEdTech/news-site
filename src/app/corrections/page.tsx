@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Corrections Policy",
-  alternates: { canonical: "/corrections" },
-};
+export const metadata = pageMetadata("Corrections", "How to request a correction and how Frontline Daily handles errors.", "/corrections");
 
 export default function CorrectionsPage() {
   return (

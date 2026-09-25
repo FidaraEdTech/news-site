@@ -84,6 +84,7 @@ export function MediaUploader({ existingFeaturedUrl, existingGallery }: MediaUpl
 
       <div className="editor-gallery-upload" style={{ border: '2px dashed var(--border)', padding: '2rem', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', position: 'relative' }}>
         <input
+          aria-label="Upload story images"
           type="file"
           accept="image/jpeg, image/png, image/webp, image/gif, image/avif"
           multiple

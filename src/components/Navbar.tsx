@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NavCategory } from "@/lib/site";
 
 type NavbarProps = {
@@ -47,38 +47,39 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
   const pathname = usePathname();
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
+    if (!mobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const opener = openerRef.current;
+    const menu = menuRef.current;
+    const focusable = () => Array.from(menu?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, select, textarea') ?? []);
+    focusable()[0]?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setMobileMenuOpen(false); }
+      if (event.key === "Tab") {
+        const items = focusable(), first = items[0], last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
       }
     };
-
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setMobileMenuOpen(false);
-      }
-    };
-
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleEscape);
-      window.addEventListener("resize", handleResize);
-    } else {
-      document.body.style.overflow = "";
-    }
-
+    const handleResize = () => { if (window.innerWidth >= (isDashboardRoute ? 1024 : 768)) setMobileMenuOpen(false); };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKey);
+    window.addEventListener("resize", handleResize);
     return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKey);
       window.removeEventListener("resize", handleResize);
+      opener?.focus();
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, isDashboardRoute]);
 
   const today = new Intl.DateTimeFormat("en-US", {
     weekday: "long",
@@ -112,9 +113,10 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
         <header className="bg-surface/95 dark:bg-zinc-950/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b-2 border-primary/10">
           <div className="flex flex-col w-full max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 md:py-5 gap-4 md:gap-5">
             <div className="flex justify-between items-center">
-              <div className="flex-1 md:hidden">
+              <div className="w-11 shrink-0 md:hidden">
                 <button
                   className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-outline-variant/30 text-on-surface hover:text-primary transition-colors"
+                  ref={openerRef}
                   onClick={() => setMobileMenuOpen(true)}
                   aria-expanded={mobileMenuOpen}
                   aria-controls="mobile-sidebar"
@@ -139,7 +141,8 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
                 </svg>
               </Link>
 
-              <div className="flex-1 flex justify-end items-center gap-4">
+              <div className="flex shrink-0 justify-end items-center gap-4 lg:flex-1">
+                <Link href="/search" className="site-search-link">Search</Link>
                 {isAdmin && (
                   <Link className="text-[10px] uppercase tracking-widest font-bold text-zinc-500 hover:text-primary transition-colors hidden lg:block" href="/dashboard">
                     Dashboard
@@ -148,8 +151,8 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
               </div>
             </div>
 
-            <nav className="hidden md:flex md:justify-center md:items-center md:gap-8 border-t border-outline-variant/20 pt-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
-              <Link className="min-h-11 flex items-center justify-center font-serif text-[17px] tracking-tight uppercase text-primary font-black hover:text-red-700 transition-colors" href="/">
+            <nav className="hidden md:flex md:justify-center md:items-center md:gap-x-5 md:gap-y-1 md:flex-wrap border-t border-outline-variant/20 pt-4">
+              <Link className="min-h-11 flex items-center justify-center font-serif text-[14px] tracking-tight uppercase text-primary font-black hover:text-red-700 transition-colors" href="/">
                 Latest News
               </Link>
               {publishedCategories.map((category) => (
@@ -175,6 +178,11 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
         />
 
         <aside
+          ref={menuRef}
+          role="dialog"
+          aria-modal={mobileMenuOpen || undefined}
+          aria-hidden={!mobileMenuOpen}
+          style={{ visibility: mobileMenuOpen ? "visible" : "hidden" }}
           className={`fixed inset-y-0 left-0 z-[60] flex flex-col bg-surface w-[85%] max-w-sm h-full shadow-2xl transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
           id="mobile-sidebar"
           aria-label="Public navigation"
@@ -272,7 +280,8 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
             <button
               className="icon-btn btn-settings dashboard-mobile-menu-btn"
               type="button"
-              onClick={() => setMobileMenuOpen(true)}
+              ref={openerRef}
+                  onClick={() => setMobileMenuOpen(true)}
               aria-expanded={mobileMenuOpen}
               aria-controls="dashboard-mobile-menu"
               aria-label="Open dashboard menu"
@@ -300,6 +309,11 @@ export function Navbar({ isAdmin, publishedCategories }: NavbarProps) {
       />
 
       <aside
+          ref={menuRef}
+          role="dialog"
+          aria-modal={mobileMenuOpen || undefined}
+          aria-hidden={!mobileMenuOpen}
+          style={{ visibility: mobileMenuOpen ? "visible" : "hidden" }}
         className={`fixed inset-y-0 left-0 z-[60] flex flex-col bg-surface w-[85%] max-w-sm h-full shadow-2xl transition-transform duration-300 lg:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
         id="dashboard-mobile-menu"
         aria-label="Dashboard navigation"

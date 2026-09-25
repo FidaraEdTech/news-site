@@ -1,4 +1,8 @@
 import { SubmitButton } from "@/components/SubmitButton";
+import { CategorySelect } from "@/components/CategorySelect";
+import { StoryEditor } from "@/components/StoryEditor";
+import { TagsInput } from "@/components/TagsInput";
+import { storyHtml } from "@/lib/story-content";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MediaUploader } from "@/components/MediaUploader";
 import {
@@ -60,7 +64,9 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
           {/* Title Area */}
           <div className="editor-panel editor-panel-primary">
             <textarea
+              aria-label="Headline"
               name="title"
+              minLength={3}
               defaultValue={story?.title ?? ""}
               required
               maxLength={180}
@@ -71,20 +77,12 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
             
             <div className="editor-metadata-row">
               <div className="editor-metadata-field">
-                <label className="editor-label">Category</label>
-                <input
-                  name="category"
-                  defaultValue={story?.category ?? ""}
-                  required
-                  maxLength={80}
-                  className="editor-input"
-                  placeholder="e.g. Investigation, Politics"
-                />
+                <CategorySelect value={story?.category} id={`category-${story?.id ?? "new"}`} />
               </div>
               <div className="editor-metadata-field">
                 <label className="editor-label">Location Context (Optional)</label>
                 <input
-                  name="location"
+                  aria-label="Location" name="location"
                   defaultValue={story?.location ?? ""}
                   maxLength={120}
                   className="editor-input"
@@ -108,7 +106,7 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
                  <div>
                     <label className="editor-label">Upload Footage</label>
                     <input
-                      name="video_file"
+                      aria-label="Upload video" name="video_file"
                       type="file"
                       accept={VIDEO_ACCEPT}
                       className="editor-file-input"
@@ -117,6 +115,7 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
                  <div>
                     <label className="editor-label">Video Caption</label>
                     <input
+                      aria-label="Video caption"
                       name="video_caption"
                       type="text"
                       defaultValue={story?.video_caption ?? ""}
@@ -141,6 +140,7 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
           <div className="editor-panel">
             <label className="editor-label" style={{marginBottom: '1rem'}}>Excerpt (Abstract)</label>
             <textarea
+              aria-label="Excerpt"
               name="excerpt"
               defaultValue={story?.excerpt ?? ""}
               maxLength={280}
@@ -149,13 +149,13 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
               rows={3}
             />
             
-            <label className="editor-label" style={{marginBottom: '1rem'}}>Story Body</label>
-            <textarea
-              name="content"
-              defaultValue={story?.content ?? ""}
-              className="editor-textarea-focus"
-              placeholder="Start your investigation here..."
-            />
+            <label className="editor-label" htmlFor={`byline-${story?.id ?? "new"}`}>Author / byline</label>
+            <input id={`byline-${story?.id ?? "new"}`} name="byline" maxLength={120} defaultValue={story?.byline ?? ""} className="editor-input" placeholder="Leave blank for Newsroom Desk" />
+            <label className="editor-label" htmlFor={`tags-${story?.id ?? "new"}`}>Tags</label>
+            <TagsInput id={`tags-${story?.id ?? "new"}`} tags={story?.tags} helpId={`tags-help-${story?.id ?? "new"}`} />
+            <p id={`tags-help-${story?.id ?? "new"}`} className="editor-help-text">Separate topics with commas. Up to 10 tags, 40 characters each. Choose one main category above.</p>
+            <h2 className="editor-label">Story body</h2>
+            <StoryEditor key={story?.id ?? "new"} initialHtml={storyHtml(story?.content ?? "", story?.content_format)} />
           </div>
         </div>
 

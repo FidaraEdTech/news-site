@@ -4,3 +4,10 @@ node_modules
 *.log
 .env.local
 .DS_Store
+
+.next-test
+playwright-report
+test-results
+tests/browser-audit.json
+tests/*.png
+supabase/.temp

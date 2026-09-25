@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Editorial Standards",
-  alternates: { canonical: "/editorial-standards" },
-};
+export const metadata = pageMetadata("Editorial standards", "Our standards for accuracy, sourcing, independence and accountability.", "/editorial-standards");
 
 export default function EditorialStandardsPage() {
   return (

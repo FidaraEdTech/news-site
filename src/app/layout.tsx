@@ -1,41 +1,24 @@
+import { CATEGORIES, categorySlug } from "@/lib/categories";
 import type { Metadata, Viewport } from "next";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
-import { Newsreader, Inter } from "next/font/google";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/newsreader";
+import "@fontsource-variable/newsreader/wght-italic.css";
 
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getCurrentAdminSession } from "@/lib/auth";
 import {
-  formatCategoryLabel,
   getSiteUrl,
   SITE_DESCRIPTION,
   SITE_NAME,
-  slugifyCategory,
-  type NavCategory,
 } from "@/lib/site";
-import { hasSupabaseEnv } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import "./globals.css";
-
-const editorialFont = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-headline",
-  display: "swap",
-  style: ["normal", "italic"],
-  adjustFontFallback: false,
-});
-
-const bodyFont = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -45,9 +28,10 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  alternates: {
-    canonical: "/",
-  },
+  robots: { index: true, follow: true, googleBot: { "max-image-preview": "large" } },
+  twitter: { card: "summary", title: SITE_NAME, description: SITE_DESCRIPTION },
+  verification: { google: process.env.GOOGLE_SITE_VERIFICATION || undefined },
+
   icons: {
     icon: "/icon.svg",
     apple: "/apple-icon.svg",
@@ -61,71 +45,17 @@ export const metadata: Metadata = {
   },
 };
 
-const preferredCategoryOrder = [
-  "politics",
-  "business",
-  "technology",
-  "tech",
-  "opinion",
-  "culture",
-  "investigation",
-  "accountability",
-];
-
-async function getPublishedCategories(): Promise<NavCategory[]> {
-  if (!hasSupabaseEnv()) {
-    return [];
-  }
-
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("stories")
-    .select("category")
-    .eq("status", "published");
-
-  if (error || !data) {
-    return [];
-  }
-
-  const categoriesBySlug = new Map<string, NavCategory>();
-
-  for (const row of data) {
-    const rawCategory = typeof row.category === "string" ? row.category : "";
-    const slug = slugifyCategory(rawCategory);
-
-    if (!slug || categoriesBySlug.has(slug)) {
-      continue;
-    }
-
-    categoriesBySlug.set(slug, {
-      label: formatCategoryLabel(rawCategory),
-      slug,
-    });
-  }
-
-  return Array.from(categoriesBySlug.values()).sort((a, b) => {
-    const aIndex = preferredCategoryOrder.indexOf(a.slug);
-    const bIndex = preferredCategoryOrder.indexOf(b.slug);
-
-    if (aIndex !== -1 || bIndex !== -1) {
-      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-    }
-
-    return a.label.localeCompare(b.label);
-  });
-}
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const { isAdmin } = await getCurrentAdminSession();
-  const publishedCategories = await getPublishedCategories();
+  const publishedCategories = CATEGORIES.map((label) => ({ label, slug: categorySlug(label) }));
 
   return (
     <html lang="en" className="light scroll-smooth">
-      <body className={`${editorialFont.variable} ${bodyFont.variable} bg-surface text-on-surface font-body selection:bg-primary-container selection:text-white`}>
+      <body className="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-white">
         <a className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-4 focus:bg-primary focus:text-white focus:rounded-lg focus:font-bold" href="#site-content">
           Skip to main content
         </a>

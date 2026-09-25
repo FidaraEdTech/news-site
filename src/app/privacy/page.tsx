@@ -1,9 +1,6 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  alternates: { canonical: "/privacy" },
-};
+export const metadata = pageMetadata("Privacy", "How Frontline Daily handles your personal information.", "/privacy");
 
 export default function PrivacyPage() {
   return (

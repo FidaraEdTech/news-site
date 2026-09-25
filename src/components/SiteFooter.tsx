@@ -33,17 +33,17 @@ export async function SiteFooter() {
               </text>
             </svg>
           </div>
-          <p className="font-sans text-xs uppercase tracking-widest text-zinc-500 leading-loose mb-4">
+          <p className="font-sans text-xs uppercase tracking-widest text-zinc-600 leading-loose mb-4">
             Setting the agenda for the global conversation through rigorous reporting and fearless analysis.
           </p>
           <div className="flex gap-4 mt-6">
             {settings?.social_twitter && (
-              <a href={settings.social_twitter} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors">
+              <a href={settings.social_twitter} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-xs font-bold uppercase tracking-widest text-zinc-600 hover:text-primary transition-colors">
                 X
               </a>
             )}
             {settings?.social_linkedin && (
-              <a href={settings.social_linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-xs font-bold uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors">
+              <a href={settings.social_linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center text-xs font-bold uppercase tracking-widest text-zinc-600 hover:text-primary transition-colors">
                 In
               </a>
             )}
@@ -53,29 +53,29 @@ export async function SiteFooter() {
         <div>
           <h4 className="font-sans text-xs font-black text-red-900 dark:text-red-500 uppercase tracking-widest mb-6">The Newsroom</h4>
           <ul className="flex flex-col gap-3 font-sans text-xs uppercase tracking-widest">
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/about">About Us</Link></li>
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/editorial-standards">Ethics Code</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/about">About Us</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/editorial-standards">Ethics Code</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-sans text-xs font-black text-red-900 dark:text-red-500 uppercase tracking-widest mb-6">Network</h4>
           <ul className="flex flex-col gap-3 font-sans text-xs uppercase tracking-widest">
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/#archive">The Archive</Link></li>
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/contact">Contact Desk</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/#archive">The Archive</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/contact">Contact Desk</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-sans text-xs font-black text-red-900 dark:text-red-500 uppercase tracking-widest mb-6">Legal</h4>
           <ul className="flex flex-col gap-3 font-sans text-xs uppercase tracking-widest">
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/privacy">Privacy Policy</Link></li>
-            <li><Link className="text-zinc-500 dark:text-zinc-400 hover:text-red-700" href="/terms">Terms of Service</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/privacy">Privacy Policy</Link></li>
+            <li><Link className="text-zinc-600 dark:text-zinc-400 hover:text-red-700" href="/terms">Terms of Service</Link></li>
           </ul>
         </div>
       </div>
       <div className="w-full px-5 sm:px-8 py-6 md:py-8 border-t border-zinc-200 dark:border-zinc-800 text-center">
-        <p className="font-sans text-[11px] sm:text-xs uppercase tracking-widest text-zinc-500 leading-relaxed">Copyright {new Date().getFullYear()} Frontline Daily. Independent Journalism for the Digital Age.</p>
+        <p className="font-sans text-[11px] sm:text-xs uppercase tracking-widest text-zinc-600 leading-relaxed">Copyright {new Date().getFullYear()} Frontline Daily. Independent Journalism for the Digital Age.</p>
       </div>
     </footer>
   );

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cache } from "react";
+import { storyHtml } from "@/lib/story-content";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -56,7 +58,8 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
 });
 
-async function getPublishedStory(id: string): Promise<Story | null> {
+const getPublishedStory = cache(async (id: string): Promise<Story | null> => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
   if (!hasSupabaseEnv()) {
     return null;
   }
@@ -70,7 +73,7 @@ async function getPublishedStory(id: string): Promise<Story | null> {
     .single();
 
   return data;
-}
+});
 
 export async function generateMetadata({ params }: StoryPageProps): Promise<Metadata> {
   const story = await getPublishedStory(params.id);
@@ -78,6 +81,7 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
   if (!story) {
     return {
       title: "Story not found",
+      robots: { index: false, follow: false },
     };
   }
 
@@ -89,6 +93,8 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
     metadataBase: new URL(siteUrl),
     title: story.title,
     description: story.excerpt || story.title,
+    authors: [{ name: story.byline || SITE_NAME }],
+    keywords: story.tags ?? [],
     alternates: {
       canonical: canonicalUrl,
     },
@@ -105,8 +111,6 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
         ? [
             {
               url: imageUrl,
-              width: 1200,
-              height: 630,
               alt: story.title,
             },
           ]
@@ -213,6 +217,7 @@ export default async function StoryPage({
   params,
   searchParams,
 }: StoryPageProps) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id)) notFound();
   if (!hasSupabaseEnv()) {
     return (
       <div className="max-w-4xl mx-auto py-14 sm:py-20 px-4 sm:px-6">
@@ -256,10 +261,6 @@ export default async function StoryPage({
     );
   }
 
-  if (story.story_type === "photo_desk") {
-    return <PhotoDeskViewer story={story} comments={comments} isAdmin={isAdmin} />;
-  }
-
   const primaryDate = new Date(story.published_at ?? story.created_at);
   const storyUrl = getCanonicalUrl(`/story/${story.id}`);
   const imageUrl = getStoryImageUrl(story);
@@ -275,15 +276,25 @@ export default async function StoryPage({
     url: storyUrl,
     articleSection: story.category,
     author: {
-      "@type": "Organization",
-      name: SITE_NAME,
+      "@type": story.byline ? "Person" : "Organization",
+      name: story.byline || SITE_NAME,
     },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
+      url: getSiteUrl(),
     },
+    inLanguage: "en",
+    keywords: (story.tags ?? []).join(", "),
     image: imageUrl ? [imageUrl] : undefined,
   };
+  if (story.story_type === "photo_desk") {
+    return <main>
+      <h1 className="sr-only">{story.title}</h1>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(newsArticleJsonLd) }} />
+      <PhotoDeskViewer story={story} comments={comments} isAdmin={isAdmin} />
+    </main>;
+  }
   return (
     <div className="bg-surface text-on-surface scroll-smooth min-h-screen">
       <script
@@ -314,7 +325,7 @@ export default async function StoryPage({
                 {SITE_NAME.charAt(0)}
               </div>
               <div className="min-w-0">
-                <p className="font-sans text-sm font-bold">Newsroom Desk</p>
+                <p className="font-sans text-sm font-bold">{story.byline || "Newsroom Desk"}</p>
                 <p className="font-sans text-xs text-on-surface-variant uppercase tracking-widest">Editorial Team</p>
               </div>
             </div>
@@ -347,10 +358,9 @@ export default async function StoryPage({
               </div>
             )}
             {story.content && story.content.trim() !== "" && (
-              <div className="story-body-content text-on-surface text-base sm:text-lg font-body leading-relaxed sm:leading-loose">
-                {story.content}
-              </div>
+              <div className="story-rich-text text-on-surface text-base sm:text-lg font-body leading-relaxed sm:leading-loose" dangerouslySetInnerHTML={{ __html: storyHtml(story.content, story.content_format) }} />
             )}
+            {!!story.tags?.length && <nav aria-label="Story topics" className="story-tags">{story.tags.map((tag) => <Link key={tag} href={`/search?tag=${encodeURIComponent(tag)}`}>{tag}</Link>)}</nav>}
 
             <div className="mt-10 sm:mt-12 border-t border-outline-variant/20 pt-6 sm:pt-8">
               <ShareStoryButton title={story.title} text={story.excerpt} />
@@ -397,11 +407,11 @@ export default async function StoryPage({
             </div>
 
             {/* Newsletter Card */}
-            <div className="bg-primary p-6 sm:p-8 text-on-primary">
-              <h4 className="font-serif font-headline text-2xl font-bold mb-4">The Morning Brief</h4>
-              <p className="text-sm opacity-80 mb-6">Get the most important stories delivered to your inbox every weekday morning.</p>
-              <SubscribeForm />
-            </div>
+            {process.env.NEXT_PUBLIC_SUBSTACK_EMBED_URL?.trim() && (
+              <div className="bg-surface-muted border border-outline-variant p-6 sm:p-8">
+                <SubscribeForm />
+              </div>
+            )}
           </aside>
         </div>
       </main>

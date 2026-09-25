@@ -1,5 +1,6 @@
 "use client";
 
+import { CategorySelect } from "@/components/CategorySelect";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { InlineMessage } from "@/components/InlineMessage";
@@ -104,18 +105,15 @@ export default function PhotoDeskAdminPage() {
               <label className="editor-label">
                 Admin Title <span className="text-danger">*</span>
               </label>
-              <input type="text" name="title" required className="editor-input" placeholder="Enter title..." />
+              <input type="text" name="title" aria-label="Photo story title" required className="editor-input" placeholder="Enter title..." />
               <p className="editor-help-text">Internal reference only — never shown publicly.</p>
             </div>
             <div>
-              <label className="editor-label">
-                Category <span className="text-danger">*</span>
-              </label>
-              <input type="text" name="category" required className="editor-input" placeholder="e.g. World, Politics" />
+              <CategorySelect id="photo-category" />
             </div>
             <div>
               <label className="editor-label">Location</label>
-              <input type="text" name="location" className="editor-input" placeholder="e.g. Lagos, Nigeria" />
+              <input type="text" name="location" aria-label="Location" className="editor-input" placeholder="e.g. Lagos, Nigeria" />
             </div>
           </div>
 

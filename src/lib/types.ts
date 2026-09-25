@@ -23,6 +23,9 @@ export type ActionState = {
 };
 
 export type Story = {
+  tags?: string[];
+  byline?: string | null;
+  content_format?: "plain" | "html";
   id: string;
   author_id: string;
   title: string;
@@ -102,6 +105,9 @@ export interface Database {
       stories: {
         Row: Story;
         Insert: {
+          tags?: string[];
+          byline?: string | null;
+          content_format?: "plain" | "html";
           id?: string;
           author_id: string;
           title: string;
@@ -126,6 +132,9 @@ export interface Database {
           views?: number;
         };
         Update: {
+          tags?: string[];
+          byline?: string | null;
+          content_format?: "plain" | "html";
           id?: string;
           author_id?: string;
           title?: string;

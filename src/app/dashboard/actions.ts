@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdminUser } from "@/lib/auth";
+import { isMainCategory, normalizeCategory, parseTags } from "@/lib/categories";
+import { sanitizeStoryHtml, storyText } from "@/lib/story-content";
 import {
   MAX_IMAGE_FILE_SIZE,
   MAX_VIDEO_FILE_SIZE,
@@ -358,9 +360,18 @@ export async function saveStoryAction(formData: FormData) {
     readText(formData, "intent") === "publish" ? "published" : "draft";
 
   const title = readText(formData, "title");
-  const category = readText(formData, "category");
+  const category = normalizeCategory(readText(formData, "category"));
   const excerpt = readText(formData, "excerpt");
-  const content = readText(formData, "content");
+  const contentFormat = readText(formData, "content_format") === "html" ? "html" : "plain";
+  const rawContent = readText(formData, "content");
+  if (rawContent.length > 200000) redirectToDashboard("error=story-validation");
+  const content = contentFormat === "html" ? sanitizeStoryHtml(rawContent) : rawContent;
+  const byline = readOptionalText(formData, "byline");
+  let tags: string[] = [];
+  try { tags = parseTags(readText(formData, "tags")); } catch { redirectToDashboard("error=story-validation"); }
+  if (!isMainCategory(category) || (byline && byline.length > 120)) {
+    redirectToDashboard("error=story-validation");
+  }
 
   if (!title || !category) {
     redirectToDashboard("error=story-validation");
@@ -420,6 +431,9 @@ export async function saveStoryAction(formData: FormData) {
   }
 
   const storyPayload: Database["public"]["Tables"]["stories"]["Update"] = {
+    tags,
+    byline,
+    content_format: contentFormat,
     title,
     category,
     location,
@@ -433,6 +447,7 @@ export async function saveStoryAction(formData: FormData) {
 
   type EditableStory = {
     id: string;
+    story_type?: string;
     published_at: string | null;
     featured_image_path: string | null;
     video_path: string | null;
@@ -443,7 +458,7 @@ export async function saveStoryAction(formData: FormData) {
   if (storyId) {
     const { data, error } = await supabase
       .from("stories")
-      .select("id, published_at, featured_image_path, video_path")
+      .select("id, story_type, published_at, featured_image_path, video_path")
       .eq("id", storyId)
       .eq("author_id", user.id)
       .single();
@@ -453,6 +468,9 @@ export async function saveStoryAction(formData: FormData) {
     }
 
     selectedStory = data;
+    if (nextStatus === "published" && selectedStory.story_type !== "photo_desk" && !storyText(content)) {
+      redirectToDashboard("error=story-validation");
+    }
     storyPayload.published_at =
       nextStatus === "published"
         ? selectedStory.published_at ?? new Date().toISOString()
@@ -482,6 +500,7 @@ export async function saveStoryAction(formData: FormData) {
       redirectToDashboard("error=story-save-failed");
     }
   } else {
+    if (nextStatus === "published" && !storyText(content)) redirectToDashboard("error=story-validation");
     storyPayload.published_at =
       nextStatus === "published" ? new Date().toISOString() : null;
     storyPayload.breaking_expires_at = isBreaking
@@ -498,6 +517,9 @@ export async function saveStoryAction(formData: FormData) {
       .from("stories")
       .insert({
         author_id: user.id,
+        tags,
+        byline,
+        content_format: contentFormat,
         title,
         category,
         location,
