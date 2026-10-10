@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
 async function getStoriesData(userId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: stories, error: storiesError } = await supabase
     .from("stories")
     .select("*")
@@ -58,7 +58,7 @@ async function getStoriesData(userId: string) {
 }
 
 type StoriesPageProps = {
-  searchParams?: { notice?: string; error?: string };
+  searchParams?: Promise<{ notice?: string; error?: string }>;
 };
 
 const noticeMessages: Record<string, string> = {
@@ -79,7 +79,8 @@ const errorMessages: Record<string, string> = {
   "gallery-upload-failed": "Failed to upload one or more gallery images.",
 };
 
-export default async function StoriesPage({ searchParams }: StoriesPageProps) {
+export default async function StoriesPage(props: StoriesPageProps) {
+  const searchParams = await props.searchParams;
   const user = await requireAdminUser();
   const { stories, storiesLoadFailed, commentsLoadFailed, commentCountsByStory, mediaByStory } = await getStoriesData(user.id);
 

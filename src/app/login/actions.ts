@@ -25,7 +25,7 @@ export async function signInAction(formData: FormData) {
     redirect("/login?error=admin-email-mismatch");
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,

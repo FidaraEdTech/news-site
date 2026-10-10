@@ -39,6 +39,12 @@ export default function PrivacyPage() {
         </p>
         <h2>Third-party services</h2>
         <p>
+          When newsletter subscriptions open, signup will be handled by Substack.
+          The subscription form sends your email directly to Substack, which manages
+          delivery and unsubscribe requests. You can unsubscribe using the link
+          in each newsletter.
+        </p>
+        <p>
           The site uses infrastructure providers such as hosting, database,
           storage, email/newsletter, and analytics services. These providers may
           process limited technical data to deliver the service.

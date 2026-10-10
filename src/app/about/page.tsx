@@ -1,25 +1,9 @@
 import { pageMetadata } from "@/lib/metadata";
 export const metadata = pageMetadata("About", "Meet Frontline Daily and learn about our independent public-interest journalism.", "/about");
 import Link from "next/link";
-import { hasSupabaseEnv } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
-
-async function getSiteSettings() {
-  if (!hasSupabaseEnv()) {
-    return null;
-  }
-
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase.from("site_settings").select("*").single();
-
-  if (error) {
-    return null;
-  }
-
-  return data as any;
-}
 
 export default async function AboutPage() {
   const settings = await getSiteSettings();
@@ -42,9 +26,12 @@ export default async function AboutPage() {
                 <p className="font-headline text-xl sm:text-2xl italic text-on-surface leading-relaxed border-b border-outline-variant/30 pb-6 sm:pb-8">
                    Frontline Daily is an independent digital publication focused on public affairs, accountability, business, technology, and culture.
                 </p>
-                <div className="mt-8 text-on-surface text-base sm:text-lg font-body leading-relaxed sm:leading-loose whitespace-pre-wrap">
+                <section aria-labelledby="about-author-title" className="mt-8">
+                  <h2 id="about-author-title" className="font-headline text-3xl font-bold mb-5">About the author</h2>
+                  <div className="text-on-surface text-base sm:text-lg font-body leading-relaxed sm:leading-loose whitespace-pre-wrap break-words">
                    {settings?.author_bio || "The newsroom focuses on verified reporting, clear analysis, and accountable public-interest journalism for global readers."}
-                </div>
+                  </div>
+                </section>
 
                 <div className="mt-10 sm:mt-16 bg-surface-muted p-5 sm:p-8 rounded-lg border-l-4 border-border">
                   <h3 className="font-bold uppercase tracking-widest text-sm text-primary mb-4">What This Publication Covers</h3>

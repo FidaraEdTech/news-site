@@ -112,7 +112,7 @@ function getProvidedFiles(formData: FormData, key: string): File[] {
 }
 
 async function removeStorageObject(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   bucket: string,
   path?: string | null,
 ) {
@@ -128,7 +128,7 @@ async function removeStorageObject(
 }
 
 async function uploadStorageObject(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   bucket: string,
   storyId: string,
   userId: string,
@@ -177,7 +177,7 @@ async function validateGalleryImage(file: File) {
 async function updateStoryGallery(input: {
   formData: FormData;
   storyId: string;
-  supabase: ReturnType<typeof createSupabaseServerClient>;
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
   userId: string;
 }) {
   const { formData, storyId, supabase, userId } = input;
@@ -341,7 +341,7 @@ export async function signOutAction() {
     redirect("/login");
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
 
   redirect("/login?notice=signed-out");
@@ -353,7 +353,7 @@ export async function saveStoryAction(formData: FormData) {
   }
 
   const user = await requireAdminUser();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const storyId = readText(formData, "story_id");
   const nextStatus: StoryStatus =
@@ -663,7 +663,7 @@ export async function deleteStoryAction(formData: FormData) {
   }
 
   const user = await requireAdminUser();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const storyId = readText(formData, "story_id");
 
   if (!storyId) {

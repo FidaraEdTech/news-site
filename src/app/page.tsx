@@ -15,10 +15,11 @@ import type { Story, StoryWithGallery } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 type HomePageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export function generateMetadata({ searchParams }: HomePageProps): Metadata {
+export async function generateMetadata(props: HomePageProps): Promise<Metadata> {
+  const searchParams = await props.searchParams;
   const raw = readParam(searchParams?.category);
   if (!raw) return pageMetadata(SITE_NAME, SITE_DESCRIPTION, "/", true);
   const category = normalizeCategory(raw);
@@ -43,7 +44,7 @@ async function getPublishedStories(): Promise<{
     };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("stories")
     .select("*")
@@ -83,7 +84,7 @@ async function getActiveBreakingStories(): Promise<BreakingStory[]> {
     return [];
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("stories")
@@ -114,7 +115,8 @@ function isWithinLatestWindow(story: Pick<Story, "published_at" | "created_at">,
   return Number.isFinite(storyDateValue) && storyDateValue >= cutoff;
 }
 
-export default async function HomePage({ searchParams }: HomePageProps) {
+export default async function HomePage(props: HomePageProps) {
+  const searchParams = await props.searchParams;
   const { error: storiesLoadFailed, stories } = await getPublishedStories();
   const breakingStories = await getActiveBreakingStories();
   const activeBreakingIds = new Set(breakingStories.map((story) => story.id));
@@ -151,7 +153,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   if (!hasSupabaseEnv()) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-6 py-12">
+      <div className="max-w-screen-xl mx-auto px-6 py-12">
         <StatePanel
           description="The publishing backend is not configured yet, so the homepage cannot load live stories right now."
           eyebrow="Newsroom Offline"
@@ -165,7 +167,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   if (storiesLoadFailed) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-6 py-12">
+      <div className="max-w-screen-xl mx-auto px-6 py-12">
         <StatePanel
           description="Published stories could not be loaded from the newsroom database just now. Please refresh and try again."
           eyebrow="Load Failed"
@@ -179,7 +181,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   if (visibleStories.length === 0) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-6 py-12">
+      <div className="max-w-screen-xl mx-auto px-6 py-12">
         <StatePanel
           actions={selectedCategory ? <Link className="bg-primary text-white px-4 py-2 uppercase font-bold text-xs" href="/">Return to all stories</Link> : undefined}
           description={selectedCategory ? "There are no published stories in this section right now." : "The editor can sign in, create a story, and publish it to make it appear here for readers."}
@@ -216,7 +218,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             )}
           </div>
         </div>
-        <div className="max-w-screen-2xl mx-auto px-6 py-12">
+        <div className="max-w-screen-xl mx-auto px-6 py-12">
           <StatePanel
             description="Active breaking updates are running in the strip above. Other published stories will appear here once they are no longer part of the breaking window."
             eyebrow="Breaking Updates"
@@ -257,15 +259,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </div>
 
       )}
-      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-8 md:py-12 overflow-hidden">
+      <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8 md:py-12 overflow-hidden">
         {!categoryLabel && <h1 className="sr-only">Frontline Daily — latest news</h1>}
         {categoryLabel && (
           <div className="mb-8 md:mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6 border-b-2 border-primary/20 pb-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Section</p>
-              <h1 className="font-headline text-3xl sm:text-4xl lg:text-5xl font-black italic tracking-tight">{categoryLabel}</h1>
+              <h1 className="font-headline text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">{categoryLabel}</h1>
             </div>
-            <Link href="/" className="min-h-10 inline-flex items-center font-label text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 hover:text-primary">
+            <Link href="/" className="min-h-10 inline-flex items-center font-label text-xs font-extrabold uppercase tracking-widest text-zinc-500 hover:text-primary">
               All Stories &rarr;
             </Link>
           </div>
@@ -282,7 +284,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             {/* Latest News Sidebar */}
             <aside className="lg:col-span-4 flex flex-col gap-7 md:gap-8 border-t-2 lg:border-t-0 lg:border-l-2 border-outline-variant/30 pt-8 lg:pt-0 lg:pl-8">
               <div>
-                <h3 className="font-headline text-xl font-black uppercase tracking-tight italic text-primary">Latest News</h3>
+                <h3 className="font-headline text-xl font-bold tracking-tight text-primary">Latest News</h3>
                 <p className="mt-2 text-xs text-on-surface-variant font-medium">Published in the last {LATEST_NEWS_WINDOW_HOURS} hours.</p>
               </div>
 
@@ -297,11 +299,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 )}
               </div>
 
-              <div className="mt-4 md:mt-8 p-5 sm:p-6 bg-surface-container-lowest border border-outline-variant/30 rounded-sm">
-                <h5 className="font-headline text-xl font-bold mb-2 italic">The Curator's Digest</h5>
-                <p className="text-sm text-on-surface-variant mb-4">Every Sunday morning, the stories that actually matter, curated for your inbox.</p>
-                <SubscribeForm />
-              </div>
+              <SubscribeForm />
             </aside>
           </div>
         )}
@@ -312,7 +310,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className="flex items-end justify-between gap-4 sm:gap-6 mb-8 md:mb-10">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Visual Reporting</p>
-                <h3 className="font-headline text-3xl font-black italic tracking-tight">Photo Desk</h3>
+                <h3 className="font-headline text-3xl font-bold tracking-tight">Photo Desk</h3>
               </div>
             </div>
 
@@ -330,9 +328,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className="flex items-end justify-between gap-4 sm:gap-6 mb-8 md:mb-10">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Recent reporting</p>
-                <h3 className="font-headline text-3xl font-black italic tracking-tight">Latest News</h3>
+                <h3 className="font-headline text-3xl font-bold tracking-tight">Latest News</h3>
               </div>
-              <Link href="#archive" className="min-h-10 font-label text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1 group text-zinc-500 hover:text-primary">
+              <Link href="#archive" className="min-h-10 font-label text-xs font-extrabold uppercase tracking-widest flex items-center gap-1 group text-zinc-500 hover:text-primary">
                 View Archive
                 <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">&rarr;</span>
               </Link>
@@ -351,10 +349,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <section id="more-stories" className="mt-16 md:mt-20 pt-10 md:pt-12 border-t-2 border-outline-variant/30">
             <div className="flex items-end justify-between gap-4 sm:gap-6 mb-8 md:mb-10">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Beyond the latest window</p>
-                <h3 className="font-headline text-3xl font-black italic tracking-tight">More Stories</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">From the newsroom</p>
+                <h3 className="font-headline text-3xl font-bold tracking-tight">More Stories</h3>
               </div>
-              <Link href="#archive" className="min-h-10 font-label text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1 group text-zinc-500 hover:text-primary">
+              <Link href="#archive" className="min-h-10 font-label text-xs font-extrabold uppercase tracking-widest flex items-center gap-1 group text-zinc-500 hover:text-primary">
                 View Archive
                 <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">&rarr;</span>
               </Link>
@@ -372,7 +370,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         {remainingStories.length > 0 && (
           <section id="archive" className="mt-16 md:mt-20 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pt-10 md:pt-12 border-t border-outline-variant/30">
             <div className="lg:col-span-4">
-              <h3 className="font-headline text-3xl sm:text-4xl font-black text-primary leading-none mb-4 italic tracking-tight">The Archive</h3>
+              <h3 className="font-headline text-3xl sm:text-4xl font-bold text-primary leading-none mb-4 tracking-tight">The Archive</h3>
               <p className="text-on-surface-variant text-sm font-medium leading-relaxed mb-8">Older reporting and context from the Frontline Daily desk.</p>
               {remainingStories[0] && (
                 <div className="bg-surface-container-lowest p-6 rounded-sm border border-outline-variant/30">

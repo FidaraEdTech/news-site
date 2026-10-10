@@ -4,7 +4,7 @@ import { isAdminEmail, hasSupabaseEnv } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function hasDatabaseAdminRow(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   email?: string | null,
 ) {
   if (!isAdminEmail(email)) {
@@ -28,7 +28,7 @@ export async function getCurrentAdminSession() {
     };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -46,7 +46,7 @@ export async function requireAdminUser() {
     redirect("/login?error=missing-config");
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
     error,

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 async function getAnalyticsData(userId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: stories, error: storiesError } = await supabase
     .from("stories")

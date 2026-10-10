@@ -4,7 +4,7 @@ import { AuthForm } from "@/components/AuthForm";
 import { signInAction } from "./actions";
 
 type LoginPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const loginMessages: Record<string, string> = {
@@ -20,7 +20,8 @@ function readParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage(props: LoginPageProps) {
+  const searchParams = await props.searchParams;
   const errorCode = readParam(searchParams?.error);
   const noticeCode = readParam(searchParams?.notice);
   const messageCode = errorCode ?? noticeCode;

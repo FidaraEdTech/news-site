@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
- testDir:'./tests',testMatch:'integration.spec.ts',timeout:120000,workers:1,
+ testDir:'./tests',testMatch:'integration.spec.ts',timeout:300000,workers:1,
+ expect:{timeout:20000},
  use:{baseURL:'http://127.0.0.1:3001',channel:'chrome',trace:'retain-on-failure'},
  webServer:[
   {command:'node tests/mock-supabase.cjs',port:54329,reuseExistingServer:!process.env.CI},

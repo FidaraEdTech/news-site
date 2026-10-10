@@ -6,20 +6,20 @@
   --font-editorial: "Newsreader Variable", "Georgia", serif;
   --font-headline: "Newsreader Variable", "Georgia", serif;
   --font-body: "Inter Variable", "Arial", sans-serif;
-  --background: #fcf8f8;
+  --background: #ffffff;
   --background-elevated: #ffffff;
-  --surface: #fcf8f8;
-  --surface-muted: #f6f3f2;
-  --surface-strong: #e5e2e1;
-  --border: #e4beb8;
-  --border-strong: #8f706b;
-  --text: #1c1b1b;
-  --muted: #5b403c;
-  --accent: #6f0000;
-  --accent-strong: #9a0000;
-  --accent-soft: #ffdad4;
-  --info: #6f0000;
-  --info-soft: #ffdad4;
+  --surface: #ffffff;
+  --surface-muted: #f6f8fb;
+  --surface-strong: #e3e9f1;
+  --border: #dbe2eb;
+  --border-strong: #8491a4;
+  --text: #12233e;
+  --muted: #526074;
+  --accent: #1455b8;
+  --accent-strong: #103f85;
+  --accent-soft: #eaf1fc;
+  --info: #1455b8;
+  --info-soft: #eaf1fc;
   --success: #1f6b52;
   --success-soft: #e8f5ef;
   --warning: #8a5a18;
@@ -2436,12 +2436,12 @@ p {
   display: grid;
   gap: 0.45rem;
   padding: 1rem 1.05rem;
-  border-left: 3px solid #6f0000;
+  border-left: 3px solid #1455b8;
   background: linear-gradient(180deg, rgba(255, 247, 246, 0.96) 0%, rgba(247, 240, 236, 0.98) 100%);
 }
 
 .auth-access-callout-title {
-  color: #6f0000;
+  color: #1455b8;
   font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.1em;

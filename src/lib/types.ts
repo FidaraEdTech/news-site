@@ -7,6 +7,16 @@ export type Json =
   | Json[];
 
 export type StoryStatus = "draft" | "published";
+export type SiteSettings = {
+  id: number;
+  author_bio: string | null;
+  social_twitter: string | null;
+  social_linkedin: string | null;
+  social_instagram: string | null;
+  newsletter_url: string | null;
+  google_site_verification: string | null;
+  updated_at?: string;
+};
 export type StoryType = "article" | "photo_desk";
 
 export type PhotoDeskItem = {
@@ -102,6 +112,12 @@ export type StoryFormValues = {
 export interface Database {
   public: {
     Tables: {
+      site_settings: {
+        Row: SiteSettings;
+        Insert: Partial<SiteSettings>;
+        Update: Partial<SiteSettings>;
+        Relationships: [];
+      };
       stories: {
         Row: Story;
         Insert: {

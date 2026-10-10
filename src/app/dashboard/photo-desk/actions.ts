@@ -55,7 +55,7 @@ export async function savePhotoDeskAction(formData: FormData) {
   }
 
   const user = await requireAdminUser();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const storyId = readText(formData, "story_id");
   const intent = readText(formData, "intent");

@@ -18,7 +18,7 @@ type ThrottleOptions = {
 };
 
 type DurableThrottleOptions = ThrottleOptions & {
-  supabase: ReturnType<typeof createSupabaseServerClient>;
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
 };
 
 const DEFAULT_BANNED_TERMS = [
@@ -71,8 +71,8 @@ function buildCookieName(scope: string, suffix: string): string {
   return `newsroom_${safeScope}_${suffix}`;
 }
 
-function getNumberCookie(name: string): number | null {
-  const value = cookies().get(name)?.value;
+async function getNumberCookie(name: string): Promise<number | null> {
+  const value = (await cookies()).get(name)?.value;
   if (!value) {
     return null;
   }
@@ -81,8 +81,8 @@ function getNumberCookie(name: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function setThrottleCookie(name: string, value: string, maxAge: number) {
-  cookies().set(name, value, {
+async function setThrottleCookie(name: string, value: string, maxAge: number) {
+  (await cookies()).set(name, value, {
     httpOnly: true,
     maxAge,
     path: "/",
@@ -151,20 +151,20 @@ export function moderateSubmissionText(
   return { ok: true };
 }
 
-export function enforceSubmissionThrottle({
+export async function enforceSubmissionThrottle({
   scope,
   normalizedText,
   cooldownSeconds,
   windowSeconds,
   maxSubmissions,
-}: ThrottleOptions): { ok: true } | { ok: false; message: string } {
+}: ThrottleOptions): Promise<{ ok: true } | { ok: false; message: string }> {
   const now = Date.now();
   const lastAtName = buildCookieName(scope, "last_at");
   const windowStartName = buildCookieName(scope, "window_start");
   const countName = buildCookieName(scope, "count");
   const lastHashName = buildCookieName(scope, "last_hash");
 
-  const lastAt = getNumberCookie(lastAtName);
+  const lastAt = await getNumberCookie(lastAtName);
   if (lastAt && now - lastAt < cooldownSeconds * 1000) {
     return {
       ok: false,
@@ -173,15 +173,15 @@ export function enforceSubmissionThrottle({
   }
 
   const textHash = hashText(normalizedText);
-  if (cookies().get(lastHashName)?.value === textHash) {
+  if ((await cookies()).get(lastHashName)?.value === textHash) {
     return {
       ok: false,
       message: "This looks like a repeated submission.",
     };
   }
 
-  const windowStart = getNumberCookie(windowStartName);
-  const count = getNumberCookie(countName) ?? 0;
+  const windowStart = await getNumberCookie(windowStartName);
+  const count = (await getNumberCookie(countName)) ?? 0;
   const windowExpired = !windowStart || now - windowStart > windowSeconds * 1000;
   const nextWindowStart = windowExpired ? now : windowStart;
   const nextCount = windowExpired ? 1 : count + 1;
@@ -193,10 +193,10 @@ export function enforceSubmissionThrottle({
     };
   }
 
-  setThrottleCookie(lastAtName, String(now), windowSeconds);
-  setThrottleCookie(windowStartName, String(nextWindowStart), windowSeconds);
-  setThrottleCookie(countName, String(nextCount), windowSeconds);
-  setThrottleCookie(lastHashName, textHash, windowSeconds);
+  await setThrottleCookie(lastAtName, String(now), windowSeconds);
+  await setThrottleCookie(windowStartName, String(nextWindowStart), windowSeconds);
+  await setThrottleCookie(countName, String(nextCount), windowSeconds);
+  await setThrottleCookie(lastHashName, textHash, windowSeconds);
 
   return { ok: true };
 }
@@ -209,7 +209,7 @@ export async function enforceDurableSubmissionThrottle({
   windowSeconds,
   maxSubmissions,
 }: DurableThrottleOptions): Promise<{ ok: true } | { ok: false; message: string }> {
-  const headerStore = headers();
+  const headerStore = await headers();
   const forwardedFor = headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
   const requester =
     headerStore.get("cf-connecting-ip") ??

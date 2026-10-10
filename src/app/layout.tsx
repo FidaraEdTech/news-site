@@ -19,8 +19,11 @@ import {
 } from "@/lib/site";
 
 import "./globals.css";
+import "./newsroom.css";
+import { getSiteSettings } from "@/lib/site-settings";
+import { validGoogleVerification } from "@/lib/newsletter";
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
     default: SITE_NAME,
@@ -45,6 +48,12 @@ export const metadata: Metadata = {
   },
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const token = settings?.google_site_verification || process.env.GOOGLE_SITE_VERIFICATION || "";
+  return { ...baseMetadata, verification: { google: validGoogleVerification(token) ? token : undefined } };
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -54,7 +63,7 @@ export default async function RootLayout({
   const publishedCategories = CATEGORIES.map((label) => ({ label, slug: categorySlug(label) }));
 
   return (
-    <html lang="en" className="light scroll-smooth">
+    <html lang="en" className="light scroll-smooth" data-scroll-behavior="smooth">
       <body className="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-white">
         <a className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:p-4 focus:bg-primary focus:text-white focus:rounded-lg focus:font-bold" href="#site-content">
           Skip to main content

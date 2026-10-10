@@ -5,12 +5,12 @@ import { getCanonicalUrl } from "@/lib/site";
 import { categorySlug, isMainCategory, normalizeCategory } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
-const routes = ["/", "/about", "/contact", "/privacy", "/terms", "/corrections", "/editorial-standards"];
+const routes = ["/", "/about", "/contact", "/newsletter", "/privacy", "/terms", "/corrections", "/editorial-standards"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = routes.map((route) => ({ url: getCanonicalUrl(route) }));
   if (!hasSupabaseEnv()) return entries;
-  const client = createSupabaseServerClient();
+  const client = await createSupabaseServerClient();
   const categories = new Set<string>();
   // Page explicitly so the database response limit does not hide older stories.
   for (let offset = 0; ; offset += 500) {

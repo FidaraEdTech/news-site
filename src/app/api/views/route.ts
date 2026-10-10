@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true, reason: "missing-config" });
     }
 
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
 
     // Try RPC first (atomic), fall back to direct update
     const { error: rpcError } = await (supabase as any).rpc("increment_views", { story_id_input: storyId });

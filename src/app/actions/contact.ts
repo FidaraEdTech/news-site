@@ -33,7 +33,7 @@ export async function submitContactAction(formData: FormData) {
     return { error: moderation.message };
   }
 
-  const throttle = enforceSubmissionThrottle({
+  const throttle = await enforceSubmissionThrottle({
     scope: "contact",
     normalizedText: `${email}:${name}:${message}`,
     cooldownSeconds: 120,
@@ -52,7 +52,7 @@ export async function submitContactAction(formData: FormData) {
     };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const durableThrottle = await enforceDurableSubmissionThrottle({
     supabase,

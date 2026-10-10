@@ -1,96 +1,53 @@
 "use client";
-
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { saveSettingsAction } from "@/app/actions/settings";
-import { SubmitButton } from "@/components/SubmitButton";
+import type { SiteSettings } from "@/lib/site-settings";
 
-type SettingsProps = {
-  settings: {
-    author_bio: string | null;
-    social_twitter: string | null;
-    social_linkedin: string | null;
-    social_instagram: string | null;
-  } | null;
-};
-
-export default function SettingsForm({ settings }: SettingsProps) {
+export default function SettingsForm({ settings }: { settings: SiteSettings | null }) {
   const [isPending, startTransition] = useTransition();
-  const [status, setStatus] = useState<{ type: "success" | "error" | null, message: string }>({ type: null, message: "" });
-
-  async function handleSave(formData: FormData) {
-    setStatus({ type: null, message: "" });
+  const [status, setStatus] = useState<{ error?: string | null; success?: boolean } | null>(null);
+  function handleSave(formData: FormData) {
+    setStatus(null);
     startTransition(async () => {
-      const result = await saveSettingsAction(formData);
-      if (result.error) {
-        setStatus({ type: "error", message: result.error });
-      } else {
-        setStatus({ type: "success", message: "Settings saved successfully." });
-      }
+      try { setStatus(await saveSettingsAction(formData)); }
+      catch { setStatus({ error: "Unable to save. Please try again." }); }
     });
   }
-
-  return (
-    <div className="bg-surface p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto border border-border shadow-sm">
-      <h2 className="font-headline text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Platform Settings</h2>
-
-      {status.type && (
-        <div className={`mb-8 p-4 border-l-4 font-bold text-sm ${status.type === "error" ? "bg-danger-soft border-danger text-danger" : "bg-success-soft border-success text-success"}`}>
-          {status.message}
+  return <div className="settings-panel">
+    <h1 className="font-headline text-3xl font-bold mb-6">Website settings</h1>
+    <p className="mb-8 text-muted">Manage the author profile, newsletter and Google site verification.</p>
+    {status && <p role={status.error ? "alert" : "status"} className={status.error ? "notice notice-error mb-6" : "notice mb-6"}>{status.error || "Settings saved successfully."}</p>}
+    <form onSubmit={event => { event.preventDefault(); handleSave(new FormData(event.currentTarget)); }} className="form-shell">
+      <fieldset disabled={isPending} className="settings-fieldset">
+        <legend>About the author</legend>
+        <div className="field"><label htmlFor="author-bio">Author bio</label><textarea id="author-bio" name="author_bio" maxLength={4000} defaultValue={settings?.author_bio || ""} rows={8} aria-describedby="author-bio-help"/>
+          <p id="author-bio-help" className="field-hint">Edit the biography shown under “About the author” on the About page. Paragraph breaks are preserved. Up to 4,000 characters.</p>
+          <Link href="/about#about-author-title" target="_blank" rel="noopener noreferrer" className="text-primary underline">View the public author bio (opens in a new tab)</Link>
         </div>
-      )}
-
-      <form action={handleSave} className="space-y-8 text-on-surface">
-         <div>
-            <label className="block text-[10px] uppercase tracking-widest font-bold text-muted mb-2">Author Bio</label>
-            <textarea 
-               name="author_bio"
-               defaultValue={settings?.author_bio || ""}
-               rows={6}
-               className="w-full bg-surface-muted border-none p-4 focus:ring-2 focus:ring-primary focus:outline-none"
-               placeholder="Editorial bio..."
-            />
-         </div>
-
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted mb-2">X / Twitter URL</label>
-               <input 
-                  type="url"
-                  name="social_twitter"
-                  defaultValue={settings?.social_twitter || ""}
-                  className="w-full bg-surface-muted border-none p-4 focus:ring-2 focus:ring-primary focus:outline-none"
-                  placeholder="https://x.com/..."
-               />
-            </div>
-            <div>
-               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted mb-2">LinkedIn URL</label>
-               <input 
-                  type="url"
-                  name="social_linkedin"
-                  defaultValue={settings?.social_linkedin || ""}
-                  className="w-full bg-surface-muted border-none p-4 focus:ring-2 focus:ring-primary focus:outline-none"
-                  placeholder="https://linkedin.com/..."
-               />
-            </div>
-            <div className="md:col-span-2">
-               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted mb-2">Instagram URL</label>
-               <input 
-                  type="url"
-                  name="social_instagram"
-                  defaultValue={settings?.social_instagram || ""}
-                  className="w-full bg-surface-muted border-none p-4 focus:ring-2 focus:ring-primary focus:outline-none"
-                  placeholder="https://instagram.com/..."
-               />
-            </div>
-         </div>
-
-         <SubmitButton 
-           className="bg-primary text-white font-bold text-xs px-8 py-4 uppercase tracking-widest w-full sm:w-auto min-h-11"
-           pendingLabel="Saving..."
-         >
-           Save Settings
-         </SubmitButton>
-      </form>
-    </div>
-  );
+        {[["social_twitter", "X / Twitter URL"], ["social_linkedin", "LinkedIn URL"], ["social_instagram", "Instagram URL"]].map(([name, label]) =>
+          <div className="field" key={name}><label htmlFor={name}>{label}</label><input id={name} name={name} type="url" maxLength={2048} defaultValue={settings?.[name as "social_twitter"] || ""}/></div>)}
+      </fieldset>
+      <fieldset disabled={isPending} className="settings-fieldset">
+        <legend>The Curator’s Digest</legend>
+        <div className="field"><label htmlFor="newsletter-url">Substack publication address</label><input id="newsletter-url" name="newsletter_url" type="url" placeholder="https://yourpublication.substack.com" defaultValue={settings?.newsletter_url || ""} aria-describedby="newsletter-url-help"/>
+          <p id="newsletter-url-help" className="field-hint">Create your publication in Substack, then paste its address here. The website will show the signup form automatically. Leave this blank until it’s ready.</p>
+        </div>
+        <p className="field-hint">Prepare each edition in Substack, select your stories and schedule it for Sunday using Africa/Lagos time. This setting connects subscriptions; it does not send or schedule editions.</p>
+      </fieldset>
+      <fieldset disabled={isPending} className="settings-fieldset">
+        <legend>Google Search Console</legend>
+        <ol className="settings-instructions">
+          <li>Open <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Google Search Console</a> using the site owner’s Google account.</li>
+          <li>Add a <strong>URL prefix</strong> property for <strong>https://frontlinedaily.org/</strong>.</li>
+          <li>Choose <strong>HTML tag</strong>. Copy only the value inside <strong>content=&quot;…&quot;</strong> and paste it below.</li>
+          <li>Save these settings, return to Google and click <strong>Verify</strong>. Then submit <strong>sitemap.xml</strong> under Sitemaps.</li>
+        </ol>
+        <div className="field"><label htmlFor="google-verification">Google verification value</label><input id="google-verification" name="google_site_verification" maxLength={256} defaultValue={settings?.google_site_verification || ""} autoComplete="off" spellCheck={false} aria-describedby="google-verification-help"/>
+          <p id="google-verification-help" className="field-hint">Google supplies this public value. Verification proves website ownership; it is separate from website security and does not guarantee indexing. Keep the value here after verification.</p>
+        </div>
+      </fieldset>
+      <button type="submit" className="button" disabled={isPending} aria-busy={isPending}>{isPending ? "Saving…" : "Save settings"}</button>
+    </form>
+  </div>;
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getStoryGalleryCount, getStoryImageUrl } from "@/lib/story-media";
 import type { StoryWithGallery } from "@/lib/types";
 
-type StoryCardVariant = "lead" | "sidebar" | "grid" | "archive";
+type StoryCardVariant = "lead" | "sidebar" | "grid" | "archive" | "search";
 
 type StoryCardProps = {
   story: StoryWithGallery;
@@ -43,6 +43,18 @@ export function StoryCard({ story, variant }: StoryCardProps) {
   const galleryCount = story.gallery_count ?? getStoryGalleryCount(story);
   const storyUrl = `/story/${story.id}`;
 
+  if (variant === "search") {
+    return <article className="search-result">
+      {imageUrl && <Link href={storyUrl} tabIndex={-1} aria-hidden="true" className="search-result-image"><img src={imageUrl} alt="" loading="lazy" /></Link>}
+      <div className="search-result-copy">
+        <p className="search-result-meta">{story.category} <span aria-hidden="true">·</span> {formatDate(story.published_at || story.created_at)}</p>
+        <h2><Link href={storyUrl}>{story.title}</Link></h2>
+        {story.excerpt?.trim() && <p className="search-result-excerpt">{story.excerpt}</p>}
+        {story.byline && <p className="search-result-author">By {story.byline}</p>}
+      </div>
+    </article>;
+  }
+
   if (variant === "lead") {
     const featuredTitleClassName = imageUrl
       ? "font-headline text-3xl sm:text-4xl lg:text-5xl font-bold text-on-surface leading-[1.08] tracking-tight group-hover:text-primary transition-colors"
@@ -63,11 +75,11 @@ export function StoryCard({ story, variant }: StoryCardProps) {
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className="text-primary font-label text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-primary font-label text-xs font-bold uppercase tracking-widest">
               {story.category}
             </span>
             <span className="w-1 h-1 bg-zinc-300 rounded-full"></span>
-            <span className="text-zinc-500 font-label text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-zinc-500 font-label text-xs font-bold uppercase tracking-widest">
               {formatDate(story.published_at || story.created_at)}
             </span>
             {!imageUrl ? <GalleryBadge count={galleryCount} /> : null}
@@ -89,9 +101,9 @@ export function StoryCard({ story, variant }: StoryCardProps) {
     return (
       <Link href={storyUrl} className="group cursor-pointer flex flex-col gap-3 pt-6 first:pt-0">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="text-primary font-label text-[9px] font-bold uppercase tracking-widest">{story.category}</span>
+          <span className="text-primary font-label text-[11px] font-bold uppercase tracking-widest">{story.category}</span>
           <span className="w-1 h-1 bg-zinc-300 rounded-full"></span>
-          <span className="text-zinc-500 font-label text-[9px] font-bold uppercase tracking-widest">
+          <span className="text-zinc-500 font-label text-[11px] font-bold uppercase tracking-widest">
             {formatTime(story.published_at || story.created_at)}
           </span>
           {!imageUrl ? <GalleryBadge count={galleryCount} /> : null}
@@ -103,7 +115,7 @@ export function StoryCard({ story, variant }: StoryCardProps) {
               <img
                 src={imageUrl}
                 alt={story.title}
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                className="w-full h-full object-cover transition-all duration-500"
               />
               <GalleryBadge count={galleryCount} overlay />
             </div>
@@ -127,7 +139,7 @@ export function StoryCard({ story, variant }: StoryCardProps) {
           </div>
         ) : <GalleryBadge count={galleryCount} />}
         
-        <span className="text-primary font-label text-[9px] font-bold uppercase tracking-widest mb-2">{story.category}</span>
+        <span className="text-primary font-label text-[11px] font-bold uppercase tracking-widest mb-2">{story.category}</span>
         <h4 className="font-headline text-lg font-bold leading-snug mb-2 group-hover:text-primary transition-colors">{story.title}</h4>
         {story.excerpt?.trim() && (
           <p className="text-xs text-on-surface-variant line-clamp-2">{story.excerpt}</p>
@@ -140,7 +152,7 @@ export function StoryCard({ story, variant }: StoryCardProps) {
     return (
       <Link href={storyUrl} className="py-5 flex justify-between items-start gap-4 group cursor-pointer block hover:bg-surface-container-lowest transition-colors px-2 -mx-2">
         <div className="max-w-2xl">
-          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2 block">
+          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2 block">
             {formatDate(story.published_at || story.created_at)} &bull; {story.category}
           </span>
           <GalleryBadge count={galleryCount} />

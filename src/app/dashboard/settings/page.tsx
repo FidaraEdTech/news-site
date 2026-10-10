@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   await requireAdminUser();
 
-  const supabase = createSupabaseServerClient();
-  const { data: settings } = await (supabase as any).from("site_settings").select("*").single();
+  const supabase = await createSupabaseServerClient();
+  const { data: settings, error } = await supabase.from("site_settings").select("*").eq("id", 1).single();
+
+  if (error || !settings) {
+    return <div role="alert" className="notice notice-error">Website settings could not be loaded. Refresh the page before editing so your existing profile is preserved.</div>;
+  }
 
   return (
     <div className="max-w-3xl w-full mx-auto">

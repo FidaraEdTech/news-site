@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState, useEffect, useRef, useState } from "react";
 import type { Comment, CommentWithReplies } from "@/lib/types";
 import { addCommentAction, deleteCommentAction, type CommentActionState } from "@/app/story/[id]/actions";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -72,13 +71,13 @@ export function CommentSection({ storyId, initialComments, isAdmin }: CommentSec
   };
 
   // Main comment form
-  const [mainState, mainAction] = useFormState<CommentActionState, FormData>(
+  const [mainState, mainAction] = useActionState<CommentActionState, FormData>(
     addCommentAction,
     { status: "idle", message: "" }
   );
 
   // Reply form
-  const [replyState, replyAction] = useFormState<CommentActionState, FormData>(
+  const [replyState, replyAction] = useActionState<CommentActionState, FormData>(
     addCommentAction,
     { status: "idle", message: "" }
   );

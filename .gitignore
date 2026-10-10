@@ -11,3 +11,5 @@ test-results
 tests/browser-audit.json
 tests/*.png
 supabase/.temp
+.audit-update.json
+/CONTINUE_HERE.md

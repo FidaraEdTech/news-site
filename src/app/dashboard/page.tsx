@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 type DashboardPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 const dashboardMessages: Record<string, string> = {
@@ -35,7 +35,7 @@ function readParam(value?: string | string[]) {
 }
 
 async function getDashboardData(userId: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: stories, error: storiesError } = await supabase
     .from("stories")
     .select("*")
@@ -67,10 +67,11 @@ async function getDashboardData(userId: string) {
   };
 }
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+export default async function DashboardPage(props: DashboardPageProps) {
+  const searchParams = await props.searchParams;
   const user = await requireAdminUser();
   const { stories, commentsLoadFailed, totalComments } = await getDashboardData(user.id);
-  
+
   const publishedStories = stories.filter((story) => story.status === "published");
   const draftStories = stories.filter((story) => story.status === "draft");
 

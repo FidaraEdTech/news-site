@@ -5,8 +5,8 @@ import type { Database } from "@/lib/types";
 
 import { getSupabaseProjectConfig } from "./config";
 
-export function createSupabaseServerClient() {
-  const cookieStore = cookies();
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
   const { url, anonKey } = getSupabaseProjectConfig();
 
   return createServerClient<Database>(url, anonKey, {

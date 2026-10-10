@@ -26,10 +26,10 @@ import type { Comment, Story, StoryMedia, StoryWithGallery } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 type StoryPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams?: Record<string, string | string[] | undefined>;
+  }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type StoryPageData = {
@@ -64,7 +64,7 @@ const getPublishedStory = cache(async (id: string): Promise<Story | null> => {
     return null;
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("stories")
     .select("*")
@@ -75,7 +75,8 @@ const getPublishedStory = cache(async (id: string): Promise<Story | null> => {
   return data;
 });
 
-export async function generateMetadata({ params }: StoryPageProps): Promise<Metadata> {
+export async function generateMetadata(props: StoryPageProps): Promise<Metadata> {
+  const params = await props.params;
   const story = await getPublishedStory(params.id);
 
   if (!story) {
@@ -127,7 +128,7 @@ export async function generateMetadata({ params }: StoryPageProps): Promise<Meta
 
 async function getStoryPageData(id: string): Promise<StoryPageData> {
   const { isAdmin } = await getCurrentAdminSession();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: story, error: storyError } = await supabase
     .from("stories")
     .select("*")
@@ -213,10 +214,8 @@ async function getStoryPageData(id: string): Promise<StoryPageData> {
   };
 }
 
-export default async function StoryPage({
-  params,
-  searchParams,
-}: StoryPageProps) {
+export default async function StoryPage(props: StoryPageProps) {
+  const params = await props.params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id)) notFound();
   if (!hasSupabaseEnv()) {
     return (

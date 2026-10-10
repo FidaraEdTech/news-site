@@ -71,7 +71,7 @@ export async function addCommentAction(
     return { status: "error", message: moderation.message };
   }
 
-  const throttle = enforceSubmissionThrottle({
+  const throttle = await enforceSubmissionThrottle({
     scope: "comment",
     normalizedText: `${storyId}:${parentId ?? ""}:${authorName}:${body}`,
     cooldownSeconds: 45,
@@ -83,7 +83,7 @@ export async function addCommentAction(
     return { status: "error", message: throttle.message };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const durableThrottle = await enforceDurableSubmissionThrottle({
     supabase,
@@ -163,7 +163,7 @@ export async function deleteCommentAction(commentId: string, storyId: string) {
     return { status: "error", message: "Invalid comment." };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const user = await requireAdminUser();
   const removedAt = new Date().toISOString();
   const { data: removedRows, error } = await supabase

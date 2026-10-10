@@ -8,7 +8,7 @@ import {
   isAdminEmail,
 } from "@/lib/supabase/config";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isLoginRoute = pathname === "/login";
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers) {
         cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
         });
@@ -49,6 +49,7 @@ export async function middleware(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
+        Object.entries(headers).forEach(([key, value]) => response.headers.set(key, value));
       },
     },
   });
@@ -56,6 +57,18 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Authenticated responses and token refreshes must never enter a shared cache.
+  if (user || isDashboardRoute || isLoginRoute) {
+    response.headers.set("Cache-Control", "private, no-store");
+  }
+
+  function redirectWithSession(url: URL) {
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach(cookie => redirect.cookies.set(cookie));
+    redirect.headers.set("Cache-Control", "private, no-store");
+    return redirect;
+  }
 
   let adminSignedIn = false;
 
@@ -74,7 +87,7 @@ export async function middleware(request: NextRequest) {
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("error", "admin-required");
 
-    return NextResponse.redirect(loginUrl);
+    return redirectWithSession(loginUrl);
   }
 
   if (isLoginRoute && adminSignedIn) {
@@ -82,7 +95,7 @@ export async function middleware(request: NextRequest) {
     dashboardUrl.pathname = "/dashboard";
     dashboardUrl.search = "";
 
-    return NextResponse.redirect(dashboardUrl);
+    return redirectWithSession(dashboardUrl);
   }
 
   return response;

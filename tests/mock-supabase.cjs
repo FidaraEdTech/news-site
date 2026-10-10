@@ -5,6 +5,8 @@ const user = { id:'00000000-0000-4000-8000-000000000001',email:'editor@example.t
 const seedId='11111111-1111-4111-8111-111111111111';
 const defaults={author_id:user.id,category:'Politics',location:null,excerpt:'Independent reporting on the public budget.',content:'Existing article text.\n\nSecond paragraph.',content_format:'plain',tags:[],byline:'Jane Reporter',status:'published',story_type:'article',featured_image_url:null,featured_image_path:null,video_url:null,video_path:null,video_caption:null,photo_desk_items:null,is_breaking:false,breaking_label:null,breaking_expires_at:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),published_at:new Date().toISOString(),views:0};
 let stories=[{...defaults,id:seedId,title:'Budget accountability report'}];
+stories.push({...defaults,id:'22222222-2222-4222-8222-222222222222',title:'Unpublished budget draft',status:'draft',byline:'Draft Author'});
+let settings={id:1,author_bio:'Independent reporting from Nigeria and around the world.',newsletter_url:null,google_site_verification:null};
 const token = ()=>[Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url'),Buffer.from(JSON.stringify({sub:user.id,aud:'authenticated',role:'authenticated',email:user.email,exp:Math.floor(Date.now()/1000)+3600})).toString('base64url'),'test-signature'].join('.');
 http.createServer(async(req,res)=>{
  res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Headers','*');
@@ -19,13 +21,17 @@ http.createServer(async(req,res)=>{
  if(url.pathname.startsWith('/rest/v1/rpc/'))return json(true);
  const table=url.pathname.split('/').pop();
  if(table==='admin_users')return json({email:user.email});
- if(table==='site_settings')return json({author_bio:'Independent reporting from Nigeria and around the world.'});
+ if(table==='site_settings'){if(req.method==='PATCH')Object.assign(settings,body);return json(settings);}
  if(table!=='stories')return json([]);
  let matches=stories.filter(row=>[...url.searchParams].every(([key,value])=>{
   if(value.startsWith('eq.'))return String(row[key])===value.slice(3);
   if(value.startsWith('neq.'))return String(row[key])!==value.slice(4);
   if(value.startsWith('in.('))return value.slice(4,-1).split(',').includes(row[key]);
-  if(key==='search_vector')return [row.title,row.content,row.excerpt,row.byline,row.category].join(' ').toLowerCase().includes(value.split('.').slice(1).join('.').toLowerCase());
+  if(value.startsWith('ilike.')) {
+   const words=String(row[key]||'').toLowerCase();let pos=0;
+   return value.slice(6).toLowerCase().split('%').filter(Boolean).every(term=>{const found=words.indexOf(term,pos);pos=found+term.length;return found>=0;});
+  }
+  if(key==='search_vector')return value.split('.').slice(1).join('.').replace(/:\*/g,'').split(' & ').every(term=>[row.title,row.content,row.excerpt,row.byline,row.category].join(' ').toLowerCase().includes(term.toLowerCase()));
   if(key==='tags')return row.tags?.includes(value.slice(4,-1));
   return true;
  }));
