@@ -1,5 +1,18 @@
 # SEO, categories, accessibility and editor release
 
+## October 2026 update
+
+- The author biography is editable in Dashboard → Settings → About the author. Saving updates the public About page, preserves paragraph breaks and keeps editor-only write access. Failed loads block the form and failed saves preserve typed changes.
+- Compact navy/blue Frontline Daily wordmark, simpler navigation, mobile menu and clearer search result listings.
+- Autocomplete suggests published headlines, main categories and authors; partial-word search supports the full results page and remains usable when suggestions are unavailable.
+- Newsletter signup is prepared at `/newsletter`. Add the publication's Substack URL in Settings when the account exists; the website does not automatically schedule or send editions.
+- Settings accepts Google's HTML-tag verification value for a URL-prefix property. Metadata is included in the initial HTML head. The owner still needs to obtain Google's value and complete verification in Search Console.
+- Updated to Next.js 16.3.8 and React 19.3.0, migrated async request APIs/proxy, protected authenticated responses from shared caching, and added standard security response headers.
+- On 10 October, all nine unit/database tests passed. The preview production build passed, real partial search returned results, and the sitemap included all 68 then-published stories. A real article contained server-rendered body text, canonical URL and NewsArticle schema.
+- Production dependency audit: zero reported vulnerabilities on 10 October. Seven build-tool dependency findings remain in the Tailwind 3 dependency tree (braces and postcss-selector-parser and their dependants). The suggested forced upgrade moves to Tailwind 4 and needs a separate styling migration; it has not been applied blindly.
+
+Deployment and final browser results are recorded below when the rollout completes. The September notes below describe the earlier release.
+
 ## Production rollout — 25 September 2026
 
 - Deployed to https://frontlinedaily.org using the existing Vercel news-site project.
