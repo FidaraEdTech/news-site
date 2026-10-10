@@ -11,6 +11,7 @@ test('autocomplete finds published headlines, categories and authors with keyboa
  const input=page.getByRole('search',{name:'Search the newsroom',exact:true}).getByRole('combobox',{name:'Search stories'});
  await input.fill('polit'); await expect(page.getByRole('listbox',{name:'Search suggestions'}).getByRole('option',{name:/Politics/})).toBeVisible();
  await input.press('Escape'); await expect(input).toHaveAttribute('aria-expanded','false');
+ await expect(input).toHaveValue('polit');
  await input.press('ArrowDown'); await input.press('Enter'); await page.waitForURL('**/?category=politics');
  await page.goto('/search');await input.fill('Bud');
  await expect(page.getByRole('option',{name:/Budget accountability report/})).toBeVisible();
