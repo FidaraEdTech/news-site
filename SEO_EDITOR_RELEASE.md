@@ -2,6 +2,8 @@
 
 ## October 2026 update
 
+- Production rollout completed on 10 October: Vercel deployment `dpl_BcGxoz1fZUQDWF5wWun8fNhBkipt`, source `33ac001a5af83105afcc96ffb4e34dcd60aeba40`, READY and assigned to `frontlinedaily.org`. On 11 October the live home, About, newsletter and autocomplete endpoints returned HTTP 200.
+- Favicon follow-up: added standard ICO (16/32/48 pixels), PNG (48 pixels) and Apple touch icon (180 pixels), generated from the existing navy/blue three-line brand mark. Removed the unsupported Apple SVG and explicit unversioned links so Next.js provides content-versioned icon metadata. `node scripts/generate-icons.mjs` regenerates the checked-in assets.
 - The author biography is editable in Dashboard → Settings → About the author. Saving updates the public About page, preserves paragraph breaks and keeps editor-only write access. Failed loads block the form and failed saves preserve typed changes.
 - Compact navy/blue Frontline Daily wordmark, simpler navigation, mobile menu and clearer search result listings.
 - Autocomplete suggests published headlines, main categories and authors; partial-word search supports the full results page and remains usable when suggestions are unavailable.
@@ -11,7 +13,10 @@
 - On 10 October, all nine unit/database tests passed. The preview production build passed, real partial search returned results, and the sitemap included all 68 then-published stories. A real article contained server-rendered body text, canonical URL and NewsArticle schema.
 - Production dependency audit: zero reported vulnerabilities on 10 October. Seven build-tool dependency findings remain in the Tailwind 3 dependency tree (braces and postcss-selector-parser and their dependants). The suggested forced upgrade moves to Tailwind 4 and needs a separate styling migration; it has not been applied blindly.
 
-Deployment and final browser results are recorded below when the rollout completes. The September notes below describe the earlier release.
+- All four browser workflows passed on 10 October: autocomplete and keyboard/fallback search; metadata, automated WCAG A/AA scans and responsive navigation; rich-text draft/save/reopen/publish; and author biography/newsletter/Google settings validation, persistence and public rendering. These write tests used a local fixture, not production content.
+- Reviewed desktop preview and mobile About screenshots. The tested widths (320, 390, 768 and 1440 pixels) had no horizontal overflow. This is a targeted accessibility check, not a full certification.
+
+The September notes below describe the earlier release. Their Next.js 14 upgrade warning and deferred newsletter implementation have been superseded by this update; connecting the newsletter publication and completing Google ownership verification still require the owner's account details.
 
 ## Production rollout — 25 September 2026
 

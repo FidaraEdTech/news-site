@@ -35,10 +35,6 @@ const baseMetadata: Metadata = {
   twitter: { card: "summary", title: SITE_NAME, description: SITE_DESCRIPTION },
   verification: { google: process.env.GOOGLE_SITE_VERIFICATION || undefined },
 
-  icons: {
-    icon: "/icon.svg",
-    apple: "/apple-icon.svg",
-  },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
