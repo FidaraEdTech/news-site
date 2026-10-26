@@ -1,13 +1,17 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
-// Keep browser tabs and Apple home-screen icons aligned with the same brand mark.
+// Keep browser tabs, Apple home-screen icons, and downloadable Substack logo aligned with the same brand mark.
 const app = new URL("../src/app/", import.meta.url);
+const pub = new URL("../public/", import.meta.url);
 const source = await readFile(new URL("icon.svg", app));
 const png = (size) => sharp(source).resize(size, size).png().toBuffer();
 
 await writeFile(new URL("icon.png", app), await png(48));
 await writeFile(new URL("apple-icon.png", app), await png(180));
+
+await mkdir(pub, { recursive: true });
+await writeFile(new URL("frontline-daily-logo.png", pub), await png(512));
 
 // An ICO containing PNG frames supports older clients requesting /favicon.ico.
 const sizes = [16, 32, 48];

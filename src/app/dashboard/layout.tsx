@@ -16,9 +16,9 @@ export default async function DashboardLayout({
       <aside className="dash-sidebar">
         {/* Brand */}
         <div className="dash-sidebar-brand">
-          <div className="dash-sidebar-logo">N</div>
+          <div className="dash-sidebar-logo">FD</div>
           <div>
-            <h2 className="dash-sidebar-title">Newsroom</h2>
+            <h2 className="dash-sidebar-title">Frontline Daily</h2>
             <p className="dash-sidebar-subtitle">Editorial CMS</p>
           </div>
         </div>

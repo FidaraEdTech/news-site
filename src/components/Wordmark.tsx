@@ -1,5 +1,38 @@
 export function Wordmark() {
-  return <span className="wordmark" aria-label="Frontline Daily">
-    <span aria-hidden="true">FRONT<span className="wordmark-blue">LINE</span><span className="wordmark-daily">DAILY</span></span>
-  </span>;
+  return (
+    <span className="wordmark" aria-label="Frontline Daily">
+      <svg
+        className="wordmark-icon"
+        aria-hidden="true"
+        viewBox="0 0 64 64"
+        fill="none"
+      >
+        <rect width="64" height="64" rx="14" fill="#0D1F3C" />
+        <rect
+          x="3"
+          y="3"
+          width="58"
+          height="58"
+          rx="11"
+          stroke="#1E3A6D"
+          strokeWidth="1.5"
+        />
+        <rect x="12" y="12" width="40" height="4.5" rx="2.25" fill="#3B82F6" />
+        <path
+          d="M13 23H30V28.5H19.5V34H28.5V39.2H19.5V50H13V23Z"
+          fill="#FFFFFF"
+        />
+        <path
+          d="M33 23H42.5C48.8 23 53 27.6 53 36.5C53 45.4 48.8 50 42.5 50H33V23ZM39.3 28.5V44.5H42.2C45.3 44.5 46.6 41.8 46.6 36.5C46.6 31.2 45.3 28.5 42.2 28.5H39.3Z"
+          fill="#60A5FA"
+        />
+      </svg>
+      <span className="wordmark-text" aria-hidden="true">
+        <span className="wordmark-main">
+          FRONT<span className="wordmark-blue">LINE</span>
+        </span>
+        <span className="wordmark-daily">DAILY</span>
+      </span>
+    </span>
+  );
 }

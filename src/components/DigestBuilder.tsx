@@ -119,6 +119,13 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
               Connect Substack URL in Settings →
             </Link>
           )}
+          <a
+            href="/frontline-daily-logo.png"
+            download="frontline-daily-logo.png"
+            className="px-3 py-1.5 rounded border border-border text-xs font-bold uppercase tracking-wider hover:bg-surface-muted"
+          >
+            Download Brand Logo (PNG) ↓
+          </a>
           <Link
             href="/newsletter"
             target="_blank"
