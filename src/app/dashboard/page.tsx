@@ -1,4 +1,7 @@
+import { DigestBuilder } from "@/components/DigestBuilder";
 import { requireAdminUser } from "@/lib/auth";
+import { getSiteUrl } from "@/lib/site";
+import { getNewsletterUrl } from "@/lib/site-settings";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +73,10 @@ async function getDashboardData(userId: string) {
 export default async function DashboardPage(props: DashboardPageProps) {
   const searchParams = await props.searchParams;
   const user = await requireAdminUser();
-  const { stories, commentsLoadFailed, totalComments } = await getDashboardData(user.id);
+  const [{ stories, commentsLoadFailed, totalComments }, newsletterUrl] = await Promise.all([
+    getDashboardData(user.id),
+    getNewsletterUrl(),
+  ]);
 
   const publishedStories = stories.filter((story) => story.status === "published");
   const draftStories = stories.filter((story) => story.status === "draft");
@@ -116,6 +122,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
             </div>
          </div>
       </div>
+
+      <DigestBuilder
+        stories={publishedStories}
+        newsletterUrl={newsletterUrl}
+        siteUrl={getSiteUrl()}
+      />
     </>
   );
 }

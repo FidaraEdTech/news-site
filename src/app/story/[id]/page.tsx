@@ -361,8 +361,11 @@ export default async function StoryPage(props: StoryPageProps) {
             )}
             {!!story.tags?.length && <nav aria-label="Story topics" className="story-tags">{story.tags.map((tag) => <Link key={tag} href={`/search?tag=${encodeURIComponent(tag)}`}>{tag}</Link>)}</nav>}
 
-            <div className="mt-10 sm:mt-12 border-t border-outline-variant/20 pt-6 sm:pt-8">
+            <div className="mt-10 sm:mt-12 border-t border-outline-variant/20 pt-6 sm:pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <ShareStoryButton title={story.title} text={story.excerpt} />
+              <Link href="/newsletter" className="newsletter-link">
+                Get Sunday updates in The Curator’s Digest <span aria-hidden="true">→</span>
+              </Link>
             </div>
 
             {/* Comments Section */}
@@ -406,11 +409,7 @@ export default async function StoryPage(props: StoryPageProps) {
             </div>
 
             {/* Newsletter Card */}
-            {process.env.NEXT_PUBLIC_SUBSTACK_EMBED_URL?.trim() && (
-              <div className="bg-surface-muted border border-outline-variant p-6 sm:p-8">
-                <SubscribeForm />
-              </div>
-            )}
+            <SubscribeForm />
           </aside>
         </div>
       </main>

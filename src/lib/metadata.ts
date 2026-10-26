@@ -8,7 +8,12 @@ export function pageMetadata(title: string, description: string, path: string, a
     ...(path.includes("?") ? { metadataBase: null } : {}),
     title: absoluteTitle ? { absolute: title } : title,
     description,
-    alternates: { canonical: getCanonicalUrl(path) },
+    alternates: {
+      canonical: getCanonicalUrl(path),
+      types: {
+        "application/rss+xml": getCanonicalUrl("/feed.xml"),
+      },
+    },
     openGraph: { type: "website", title, description, siteName: SITE_NAME, url: getCanonicalUrl(path) },
     twitter: { card: "summary", title, description },
   };

@@ -14,7 +14,7 @@ export async function SiteFooter() {
         </div>
       </div>
       <nav aria-label="About the newsroom"><h2>The newsroom</h2><Link href="/about">About Frontline Daily</Link><Link href="/editorial-standards">Editorial standards</Link><Link href="/corrections">Corrections</Link><Link href="/contact">Contact</Link></nav>
-      <nav aria-label="Discover"><h2>Stay informed</h2><Link href="/search">Search stories</Link><Link href="/#archive">The archive</Link><Link href="/newsletter">The Curator’s Digest</Link></nav>
+      <nav aria-label="Discover"><h2>Stay informed</h2><Link href="/search">Search stories</Link><Link href="/#archive">The archive</Link><Link href="/newsletter">The Curator’s Digest</Link><Link href="/feed.xml">RSS feed</Link></nav>
       <nav aria-label="Site policies"><h2>Information</h2><Link href="/privacy">Privacy policy</Link><Link href="/terms">Terms of service</Link></nav>
     </div>
     <div className="news-footer-bottom">© {new Date().getFullYear()} Frontline Daily. All rights reserved.</div>
