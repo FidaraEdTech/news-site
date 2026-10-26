@@ -27,6 +27,7 @@ test('prefix search handles partial headlines, categories and names in PostgreSQ
 
 test('newsletter URL validation prevents arbitrary embeds and strips unsafe paths', () => {
   assert.equal(normalizeSubstackUrl('https://frontline-test.substack.com/embed?utm=test'), 'https://frontline-test.substack.com');
+  assert.equal(normalizeSubstackUrl('https://substack.com/@frontlinedaily'), 'https://frontlinedaily.substack.com');
   for (const url of ['javascript:alert(1)','http://example.substack.com','https://substack.com.evil.test','https://evil.test/?site=frontline.substack.com','https://user:pass@frontline.substack.com','https://frontline.substack.com:8080']) assert.equal(normalizeSubstackUrl(url),null);
   assert.equal(validGoogleVerification('test_google-verification_token_123'),true);
   assert.equal(validGoogleVerification('<meta content="test">'),false);

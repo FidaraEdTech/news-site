@@ -18,8 +18,8 @@ export async function getNewsletterUrl() {
   const configured =
     normalizeSubstackUrl(settings?.newsletter_url) ??
     normalizeSubstackUrl(process.env.NEXT_PUBLIC_SUBSTACK_EMBED_URL);
-  if (configured === "https://frontlinedaily.substack.com") {
-    return "https://frontlinedailynewsroom.substack.com";
+  if (configured === "https://frontlinedailynewsroom.substack.com") {
+    return "https://frontlinedaily.substack.com";
   }
   return configured;
 }
