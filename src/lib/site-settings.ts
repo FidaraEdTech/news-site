@@ -15,5 +15,11 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings | null> => {
 
 export async function getNewsletterUrl() {
   const settings = await getSiteSettings();
-  return normalizeSubstackUrl(settings?.newsletter_url) ?? normalizeSubstackUrl(process.env.NEXT_PUBLIC_SUBSTACK_EMBED_URL);
+  const configured =
+    normalizeSubstackUrl(settings?.newsletter_url) ??
+    normalizeSubstackUrl(process.env.NEXT_PUBLIC_SUBSTACK_EMBED_URL);
+  if (configured === "https://frontlinedaily.substack.com") {
+    return "https://frontlinedailynewsroom.substack.com";
+  }
+  return configured;
 }
