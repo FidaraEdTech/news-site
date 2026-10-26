@@ -109,6 +109,15 @@ export type StoryFormValues = {
   status: StoryStatus;
 };
 
+export type NewsletterSubscriberRow = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+  status: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -241,6 +250,26 @@ export interface Database {
             referencedColumns: ["id"];
           }
         ];
+      };
+      contact_messages: {
+        Row: NewsletterSubscriberRow;
+        Insert: {
+          id?: string;
+          name: string;
+          email: string;
+          message: string;
+          created_at?: string;
+          status?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          message?: string;
+          created_at?: string;
+          status?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

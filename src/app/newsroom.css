@@ -82,18 +82,27 @@
 .newsletter-intro .newsletter-lead { font-size: .98rem; line-height: 1.75; color: var(--muted); max-width: 560px; }
 
 .newsletter-panel { width: 100%; max-width: 620px; background: #ffffff; border: 1px solid #d5e1f2; border-top: 4px solid var(--accent); border-radius: 8px; padding: 2.25rem 2rem; box-shadow: 0 18px 40px rgba(13, 31, 60, 0.07); text-align: left; }
-.newsletter-panel-header { text-align: center; margin-bottom: 1rem; }
+.newsletter-panel-header { text-align: center; margin-bottom: 1.35rem; }
 .newsletter-panel-header > .eyebrow { font-size: .68rem; color: var(--accent); margin-bottom: .4rem; }
 .newsletter-panel-header h2 { font-family: var(--font-headline); font-size: 1.85rem; line-height: 1.18; font-weight: 650; color: #0d1f3c; margin-bottom: .45rem; }
 .newsletter-panel-sub { font-size: .88rem; color: var(--muted); line-height: 1.6; }
 
 .newsletter-signup { display: grid; gap: .75rem; }
 .newsletter-signup p { font-size: .9rem; line-height: 1.65; color: var(--muted); }
-.newsletter-native-wrap { width: 100%; display: flex; flex-direction: column; gap: .6rem; }
+.newsletter-native-wrap { width: 100%; display: flex; flex-direction: column; gap: .75rem; }
+.newsletter-native-form { display: flex; gap: .65rem; width: 100%; align-items: stretch; }
+.newsletter-native-form-compact { flex-direction: column; }
+.newsletter-native-input { flex: 1 1 auto; min-width: 0; min-height: 50px; padding: .8rem 1rem; border: 1.5px solid #b8cae2 !important; border-radius: 6px !important; background: #ffffff !important; color: #0d1f3c !important; font-size: .95rem !important; transition: border-color .15s ease, box-shadow .15s ease; }
+.newsletter-native-input:focus { outline: none; border-color: #1455b8 !important; box-shadow: 0 0 0 3px rgba(20, 85, 184, 0.14); }
+.newsletter-native-submit { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: .8rem 1.6rem; border-radius: 6px; background: #1455b8 !important; color: #ffffff !important; font-weight: 700; font-size: .92rem; letter-spacing: .01em; cursor: pointer; flex-shrink: 0; border: 0 !important; transition: background .15s ease; }
+.newsletter-native-submit:hover { background: #103f85 !important; }
+.newsletter-native-submit:disabled { opacity: .65; cursor: not-allowed; }
 
-/* Cleanly window the official Substack form so Cloudflare/CAPTCHA passes 100% while hiding top/bottom Substack clutter */
-.newsletter-embed-window { position: relative; width: 100%; height: 155px; overflow: hidden; border-radius: 6px; background: #ffffff; border: 1px solid #e2eaf5; }
-.newsletter-embed-cropped { position: absolute; left: 0; top: -68px; width: 100%; height: 275px; border: 0; background: #ffffff; }
+.newsletter-success-box { padding: 1.25rem 1.35rem; border-radius: 6px; background: #ebf7f1; border: 1px solid #a7dcc2; border-left: 4px solid #1f6b52; text-align: left; }
+.newsletter-success-title { font-weight: 750; color: #134e3a !important; font-size: .96rem !important; margin-bottom: .35rem; }
+.newsletter-success-body { font-size: .85rem !important; color: #1f5744 !important; line-height: 1.55; }
+.newsletter-reset-btn { margin-top: .65rem; display: inline-flex; align-items: center; font-size: .78rem; font-weight: 700; color: #1455b8 !important; background: transparent !important; border: 0 !important; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.newsletter-error-box { padding: .75rem 1rem; border-radius: 6px; background: #ffdad6; color: #93000a !important; font-size: .84rem !important; font-weight: 600; text-align: center; }
 
 .newsletter-help { font-size: .76rem !important; color: var(--muted); text-align: center; }
 .digest-card .newsletter-help { text-align: left; }
@@ -115,7 +124,7 @@
 .news-footer nav a { font-size: .82rem; line-height: 1.5; color: var(--muted); min-height: 28px; }
 .news-footer a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 .news-footer-bottom { max-width: 1232px; margin: 0 auto; padding: 1.5rem; border-top: 1px solid var(--border); font-size: .72rem; color: var(--muted); }
-.settings-panel { padding: clamp(1rem, 3vw, 2rem); background: #fff; border: 1px solid var(--border); }
+.settings-panel { padding: clamp(1rem, 3vw, 2rem); background: #fff; border: 1px solid var(--border); border-radius: 8px; }
 .settings-fieldset { border: 0; border-top: 1px solid var(--border); display: grid; gap: 1.2rem; padding-top: 1.5rem; padding-bottom: 1rem; min-width: 0; }
 .settings-fieldset legend { font-weight: 700; padding-right: .75rem; }
 .settings-instructions { list-style: decimal; padding-left: 1.3rem; font-size: .9rem; line-height: 1.75; }
@@ -140,7 +149,8 @@
   .subscribe-button { padding: .5rem .7rem; font-size: .75rem; min-height: 40px; }
   .newsletter-page { padding-block: 2.25rem 3.5rem; }
   .newsletter-panel { padding: 1.5rem 1.25rem; }
-  .newsletter-embed-window { height: 170px; }
+  .newsletter-native-form { flex-direction: column; }
+  .newsletter-native-submit { width: 100%; }
   .newsletter-pillars { grid-template-columns: 1fr; gap: 1rem; }
   .news-footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem 1.5rem; padding-block: 2rem; }
   .news-footer-brand { grid-column: 1 / -1; }

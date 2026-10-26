@@ -13,3 +13,4 @@ tests/*.png
 supabase/.temp
 .audit-update.json
 /CONTINUE_HERE.md
+.env*

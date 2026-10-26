@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { addSubscribersFromDashboardAction } from "@/app/actions/newsletter";
 import { uploadDigestImageAction } from "@/app/dashboard/actions";
 import {
   formatDigestEdition,
@@ -9,13 +10,24 @@ import {
   type DigestStoryItem,
 } from "@/lib/newsletter";
 
+type SubscriberEntry = {
+  email: string;
+  created_at: string;
+};
+
 type DigestBuilderProps = {
   stories: DigestStoryItem[];
   newsletterUrl: string | null;
   siteUrl: string;
+  initialSubscribers?: SubscriberEntry[];
 };
 
-export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilderProps) {
+export function DigestBuilder({
+  stories,
+  newsletterUrl,
+  siteUrl,
+  initialSubscribers = [],
+}: DigestBuilderProps) {
   const defaultSelectedIds = useMemo(
     () => stories.slice(0, 5).map((story) => story.id),
     [stories]
@@ -35,6 +47,10 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
   const [editingImageStoryId, setEditingImageStoryId] = useState<string | null>(null);
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  const [subscribers, setSubscribers] = useState<SubscriberEntry[]>(initialSubscribers);
+  const [newSubscriberInput, setNewSubscriberInput] = useState("");
+  const [isAddingSubscribers, startSubscriberTransition] = useTransition();
 
   const selectedStories = useMemo(
     () => stories.filter((story) => selectedIds.includes(story.id)),
@@ -77,6 +93,48 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
     );
   }
 
+  function handleAddSubscribers(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newSubscriberInput.trim()) return;
+
+    const formData = new FormData();
+    formData.set("emails", newSubscriberInput);
+
+    startSubscriberTransition(async () => {
+      const res = await addSubscribersFromDashboardAction(formData);
+      setCopyStatus(res.message);
+      if (res.ok) {
+        const now = new Date().toISOString();
+        const addedEmails = newSubscriberInput
+          .split(/[\s,;]+/)
+          .map((e) => e.trim().toLowerCase())
+          .filter((e) => e.includes("@"));
+        setSubscribers((prev) => {
+          const existing = new Set(prev.map((item) => item.email));
+          const fresh = addedEmails
+            .filter((email) => !existing.has(email))
+            .map((email) => ({ email, created_at: now }));
+          return [...fresh, ...prev];
+        });
+        setNewSubscriberInput("");
+      }
+    });
+  }
+
+  async function copySubscriberEmails() {
+    if (subscribers.length === 0) {
+      setCopyStatus("No subscriber emails to copy yet.");
+      return;
+    }
+    try {
+      const list = subscribers.map((s) => s.email).join(", ");
+      await navigator.clipboard.writeText(list);
+      setCopyStatus(`Copied ${subscribers.length} subscriber email(s) to clipboard!`);
+    } catch {
+      setCopyStatus("Unable to copy subscriber emails automatically.");
+    }
+  }
+
   async function handleUploadImage(file: File, target: "header" | string) {
     setUploadingTarget(target);
     setCopyStatus("Uploading image...");
@@ -117,7 +175,9 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
       } else {
         await navigator.clipboard.writeText(formatted.text);
       }
-      setCopyStatus("Digest (with images & links) copied! Paste (Ctrl+V) into your Substack post editor.");
+      setCopyStatus(
+        "Digest (with images & story links) copied! Paste (Ctrl+V) into your email or Substack editor."
+      );
       return true;
     } catch {
       setCopyStatus("Unable to copy automatically. Please select and copy from the preview below.");
@@ -142,6 +202,15 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
     window.open(targetUrl, "_blank", "noopener,noreferrer");
   }
 
+  async function handleSendViaGmail() {
+    await copyRichDigest();
+    const bccList = subscribers.map((s) => s.email).join(",");
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(
+      bccList
+    )}&su=${encodeURIComponent(formatted.subject)}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+  }
+
   return (
     <section
       id="curators-digest-studio"
@@ -157,28 +226,16 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
             The Curator’s Digest Studio
           </h3>
           <p className="text-sm text-muted mt-1">
-            Curate your weekly edition with story photos, teasers, and optional cover images. Every story directs subscribers straight back to{" "}
-            <strong>FrontlineDaily.org</strong> to read the full report.
+            Manage subscribers directly on your website, curate story photos and teasers, and send via Gmail or Substack. Every story links straight back to{" "}
+            <strong>FrontlineDaily.org</strong>.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {newsletterUrl ? (
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-success-soft text-success text-xs font-bold border border-success/30">
-              Connected: {newsletterUrl.replace(/^https?:\/\//, "")}
-            </span>
-          ) : (
-            <Link
-              href="/dashboard/settings"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-warning-soft text-warning text-xs font-bold border border-warning/30 underline"
-            >
-              Connect Substack URL in Settings →
-            </Link>
-          )}
           <a
             href="/frontline-daily-logo.png"
             download="frontline-daily-logo.png"
-            className="px-3 py-1.5 rounded border border-border text-xs font-bold uppercase tracking-wider hover:bg-surface-muted"
+            className="button secondary button-compact text-xs"
           >
             Download Brand Logo (PNG) ↓
           </a>
@@ -186,9 +243,9 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
             href="/newsletter"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 rounded border border-border text-xs font-bold uppercase tracking-wider hover:bg-surface-muted"
+            className="button secondary button-compact text-xs"
           >
-            View Public Digest Page ↗
+            View Public Subscribe Page ↗
           </Link>
         </div>
       </div>
@@ -201,6 +258,79 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
           {copyStatus}
         </div>
       )}
+
+      {/* Website Subscribers Panel */}
+      <div className="p-5 rounded border border-border bg-surface-muted mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+          <div>
+            <h4 className="font-headline text-xl font-bold text-on-surface">
+              Website Subscribers ({subscribers.length})
+            </h4>
+            <p className="text-xs text-muted mt-0.5">
+              Anyone who subscribes on <strong>frontlinedaily.org/newsletter</strong> is saved here automatically—with no Substack redirect or confirmation delay.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={copySubscriberEmails}
+              disabled={subscribers.length === 0}
+              className="button secondary button-compact text-xs"
+            >
+              Copy All {subscribers.length} Emails
+            </button>
+            {newsletterUrl && (
+              <a
+                href={`${newsletterUrl}/publish/subscribers`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button secondary button-compact text-xs"
+              >
+                Open Substack Subscribers ↗
+              </a>
+            )}
+          </div>
+        </div>
+
+        <form onSubmit={handleAddSubscribers} className="flex flex-col sm:flex-row gap-2.5 mb-4">
+          <input
+            type="text"
+            placeholder="Add subscriber email(s) directly (comma-separated, e.g. reader1@gmail.com, reader2@gmail.com)..."
+            value={newSubscriberInput}
+            onChange={(e) => setNewSubscriberInput(e.target.value)}
+            disabled={isAddingSubscribers}
+            className="flex-1 min-h-11 px-3.5 py-2 border border-border rounded bg-white text-sm"
+          />
+          <button
+            type="submit"
+            disabled={isAddingSubscribers || !newSubscriberInput.trim()}
+            className="button button-compact text-xs"
+          >
+            {isAddingSubscribers ? "Adding…" : "+ Add Subscribers"}
+          </button>
+        </form>
+
+        {subscribers.length > 0 ? (
+          <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-3 rounded border border-border bg-white">
+            {subscribers.map((sub) => (
+              <span
+                key={sub.email}
+                className="inline-flex items-center px-2.5 py-1 rounded bg-surface-muted border border-border text-xs font-semibold text-on-surface"
+              >
+                {sub.email}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted italic">
+            No subscribers recorded yet. Test subscribing on{" "}
+            <Link href="/newsletter" className="text-primary underline">
+              /newsletter
+            </Link>{" "}
+            or add emails above.
+          </p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Edition Setup, Image Controls & Story Selection */}
@@ -220,7 +350,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
               <button
                 type="button"
                 onClick={copySubjectLine}
-                className="min-h-11 px-4 py-2 border border-border rounded text-xs font-bold uppercase tracking-wider hover:bg-surface-muted flex-shrink-0"
+                className="button secondary button-compact text-xs flex-shrink-0"
               >
                 Copy Subject
               </button>
@@ -247,7 +377,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
                 Edition Cover / Banner Image (Optional)
               </label>
               <div className="flex items-center gap-2">
-                <label className="cursor-pointer px-3 py-1.5 rounded bg-white border border-border text-xs font-bold uppercase tracking-wider hover:bg-surface">
+                <label className="button secondary button-compact text-xs cursor-pointer">
                   {uploadingTarget === "header" ? "Uploading..." : "+ Upload Image"}
                   <input
                     type="file"
@@ -267,7 +397,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
                   <button
                     type="button"
                     onClick={() => setHeaderImageUrl("")}
-                    className="px-2.5 py-1.5 rounded border border-border bg-white text-xs font-bold text-danger hover:bg-surface"
+                    className="button danger button-compact text-xs"
                   >
                     Remove
                   </button>
@@ -386,7 +516,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
                             onClick={() =>
                               setEditingImageStoryId(isEditingImage ? null : story.id)
                             }
-                            className="font-bold text-primary hover:underline"
+                            className="font-bold text-primary underline"
                           >
                             {resolvedImage ? "Change image" : "+ Add image"}
                           </button>
@@ -401,7 +531,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
                                   return next;
                                 })
                               }
-                              className="font-bold text-danger hover:underline"
+                              className="font-bold text-danger underline"
                             >
                               Reset image
                             </button>
@@ -424,7 +554,7 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
                               }
                               className="flex-1 min-h-9 px-2.5 py-1.5 border border-border rounded bg-white text-xs"
                             />
-                            <label className="cursor-pointer px-3 py-1.5 rounded bg-white border border-border text-xs font-bold uppercase tracking-wider hover:bg-surface flex-shrink-0">
+                            <label className="button secondary button-compact text-xs cursor-pointer flex-shrink-0">
                               {uploadingTarget === story.id ? "Uploading..." : "Upload File"}
                               <input
                                 type="file"
@@ -450,23 +580,36 @@ export function DigestBuilder({ stories, newsletterUrl, siteUrl }: DigestBuilder
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
-              type="button"
-              onClick={copyRichDigest}
-              disabled={selectedStories.length === 0}
-              className="button min-h-11 px-5 py-2.5 text-xs font-bold uppercase tracking-wider disabled:opacity-50"
-            >
-              1. Copy Formatted Digest
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyAndOpenSubstack}
-              disabled={selectedStories.length === 0}
-              className="min-h-11 px-5 py-2.5 rounded border-2 border-primary text-primary bg-white hover:bg-surface-muted text-xs font-bold uppercase tracking-wider disabled:opacity-50"
-            >
-              2. Copy &amp; Open Substack Editor ↗
-            </button>
+          <div className="flex flex-col gap-3 pt-2">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleSendViaGmail}
+                disabled={selectedStories.length === 0}
+                className="button text-xs"
+              >
+                1. Copy Digest &amp; Send via Gmail ({subscribers.length} Subscribers) ↗
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyAndOpenSubstack}
+                disabled={selectedStories.length === 0}
+                className="button secondary text-xs"
+              >
+                2. Copy &amp; Open Substack Editor ↗
+              </button>
+              <button
+                type="button"
+                onClick={copyRichDigest}
+                disabled={selectedStories.length === 0}
+                className="button secondary text-xs"
+              >
+                Copy Formatted Digest Only
+              </button>
+            </div>
+            <p className="text-xs text-muted leading-relaxed">
+              <strong>Tip:</strong> Clicking <strong>Send via Gmail</strong> copies the formatted digest (including images and links) and opens Gmail with all {subscribers.length} website subscribers in BCC—just press <strong>Ctrl+V</strong> in the email body and hit Send! Or use <strong>Open Substack Editor</strong> and make sure <em>&ldquo;Deliver this post via email&rdquo;</em> is checked before clicking <em>&ldquo;Send to everyone now&rdquo;</em>.
+            </p>
           </div>
         </div>
 

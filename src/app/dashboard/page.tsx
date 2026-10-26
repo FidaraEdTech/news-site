@@ -39,17 +39,35 @@ function readParam(value?: string | string[]) {
 
 async function getDashboardData(userId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data: stories, error: storiesError } = await supabase
-    .from("stories")
-    .select("*")
-    .eq("author_id", userId)
-    .order("updated_at", { ascending: false });
+  const [{ data: stories, error: storiesError }, { data: subscriberRows }] = await Promise.all([
+    supabase
+      .from("stories")
+      .select("*")
+      .eq("author_id", userId)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("contact_messages")
+      .select("id, email, created_at")
+      .eq("name", "NEWSLETTER_SUBSCRIBER")
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const seenEmails = new Set<string>();
+  const subscribers: Array<{ email: string; created_at: string }> = [];
+  for (const row of subscriberRows ?? []) {
+    const email = row.email?.trim().toLowerCase();
+    if (!email || email === "test-verify@frontlinedaily.org" || seenEmails.has(email)) {
+      continue;
+    }
+    seenEmails.add(email);
+    subscribers.push({ email, created_at: row.created_at });
+  }
 
   if (storiesError || !stories) {
-    return { stories: [], commentsLoadFailed: false, totalComments: 0 };
+    return { stories: [], commentsLoadFailed: false, totalComments: 0, subscribers };
   }
   if (stories.length === 0) {
-    return { stories, commentsLoadFailed: false, totalComments: 0 };
+    return { stories, commentsLoadFailed: false, totalComments: 0, subscribers };
   }
 
   const storyIds = stories.map((story) => story.id);
@@ -60,20 +78,21 @@ async function getDashboardData(userId: string) {
     .in("story_id", storyIds);
 
   if (commentsError || !commentRows) {
-    return { stories, commentsLoadFailed: true, totalComments: 0 };
+    return { stories, commentsLoadFailed: true, totalComments: 0, subscribers };
   }
 
   return {
     stories,
     commentsLoadFailed: false,
     totalComments: commentRows.length,
+    subscribers,
   };
 }
 
 export default async function DashboardPage(props: DashboardPageProps) {
   const searchParams = await props.searchParams;
   const user = await requireAdminUser();
-  const [{ stories, commentsLoadFailed, totalComments }, newsletterUrl] = await Promise.all([
+  const [{ stories, commentsLoadFailed, totalComments, subscribers }, newsletterUrl] = await Promise.all([
     getDashboardData(user.id),
     getNewsletterUrl(),
   ]);
@@ -127,6 +146,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         stories={publishedStories}
         newsletterUrl={newsletterUrl}
         siteUrl={getSiteUrl()}
+        initialSubscribers={subscribers}
       />
     </>
   );
