@@ -108,7 +108,7 @@ export default function PhotoDeskAdminPage() {
               <input type="text" name="title" aria-label="Photo story title" required className="editor-input" placeholder="Enter title..." />
               <p className="editor-help-text">Internal reference only — never shown publicly.</p>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <CategorySelect id="photo-category" />
             </div>
             <div>

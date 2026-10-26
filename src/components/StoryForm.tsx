@@ -76,10 +76,10 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
             />
             
             <div className="editor-metadata-row">
-              <div className="editor-metadata-field">
+              <div className="editor-metadata-field" style={{ flex: "1 1 100%", width: "100%" }}>
                 <CategorySelect value={story?.category} id={`category-${story?.id ?? "new"}`} />
               </div>
-              <div className="editor-metadata-field">
+              <div className="editor-metadata-field" style={{ flex: "1 1 100%", width: "100%" }}>
                 <label className="editor-label">Location Context (Optional)</label>
                 <input
                   aria-label="Location" name="location"
@@ -153,7 +153,7 @@ export function StoryForm({ action, story, gallery = [], title, description }: S
             <input id={`byline-${story?.id ?? "new"}`} name="byline" maxLength={120} defaultValue={story?.byline ?? ""} className="editor-input" placeholder="Leave blank for Newsroom Desk" />
             <label className="editor-label" htmlFor={`tags-${story?.id ?? "new"}`}>Tags</label>
             <TagsInput id={`tags-${story?.id ?? "new"}`} tags={story?.tags} helpId={`tags-help-${story?.id ?? "new"}`} />
-            <p id={`tags-help-${story?.id ?? "new"}`} className="editor-help-text">Separate topics with commas. Up to 10 tags, 40 characters each. Choose one main category above.</p>
+            <p id={`tags-help-${story?.id ?? "new"}`} className="editor-help-text">Separate topics with commas. Up to 10 tags, 40 characters each. You can also assign multiple categories above.</p>
             <h2 className="editor-label">Story body</h2>
             <StoryEditor key={story?.id ?? "new"} initialHtml={storyHtml(story?.content ?? "", story?.content_format)} />
           </div>

@@ -60,6 +60,9 @@ test('editor formats, saves, republishes and reopens stories without losing cont
  const form=page.locator('form.story-editor-wrapper').first();
  await form.getByLabel('Headline').fill('Formatted integration story');
  await form.getByLabel('Main category').selectOption('Politics');
+ await form.getByRole('button',{name:'+ Security',exact:true}).click();
+ await form.getByLabel('New category name').fill('Sports');
+ await form.getByRole('button',{name:/Add Category/i}).click();
  await form.getByLabel('Author / byline').fill('Test Writer');await form.getByLabel('Tags',{exact:true}).fill('budget, accountability');
  const editor=form.getByRole('textbox',{name:'Story body'});await expect(editor).toBeVisible();
  await editor.fill('Important reporting');await editor.press('ControlOrMeta+A');
@@ -79,7 +82,9 @@ test('editor formats, saves, republishes and reopens stories without losing cont
  await expect(draft.getByRole('textbox',{name:'Story body'}).locator('strong')).toContainText('IMPORTANT REPORTING');
  await draft.getByRole('button',{name:'Publish to World'}).click();await page.waitForURL(/notice=story-published/);
  const response=await page.request.get('http://127.0.0.1:54329/__stories');const rows=await response.json();const story=rows.find((row:any)=>row.title==='Formatted integration story');
- expect(story.status).toBe('published');expect(story.content_format).toBe('html');expect(story.tags).toEqual(['budget','accountability']);
+ expect(story.status).toBe('published');expect(story.content_format).toBe('html');expect(story.tags).toEqual(['budget','accountability']);expect(story.category).toBe('Politics, Security, Sports');
+ await page.goto('/dashboard/categories');await page.screenshot({path:'tests/categories-page.png',fullPage:true});
+ await page.goto('/dashboard/stories/' + story.id);await page.screenshot({path:'tests/separate-edit-page.png',fullPage:true});
  await page.goto(`/story/${story.id}`);await expect(page.locator('article blockquote strong')).toHaveText('IMPORTANT REPORTING');
  await expect(page.locator('article small')).toHaveText('IMPORTANT REPORTING');await expect(page.getByText('Test Writer',{exact:true})).toBeVisible();
  await page.screenshot({path:'tests/formatted-story.png',fullPage:true});
