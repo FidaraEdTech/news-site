@@ -84,3 +84,33 @@ test('settings migration is additive, repeatable and preserves existing profile 
   assert.deepEqual((await db.query('select * from site_settings')).rows,[{id:1,author_bio:'Original bio',newsletter_url:null,google_site_verification:null}]);
   await db.close();
 });
+
+
+test('Curator digest embeds header image and story images when available or added', () => {
+  const digest = formatDigestEdition({
+    title: 'Visual Sunday Digest',
+    headerImageUrl: 'https://frontlinedaily.org/frontline-daily-logo.png',
+    siteUrl: 'https://frontlinedaily.org',
+    stories: [
+      {
+        id: '33333333-3333-4333-8333-333333333333',
+        title: 'Infrastructure Photo Report',
+        category: 'Public Affairs',
+        excerpt: 'On-the-ground visual coverage.',
+        featured_image_url: 'https://cdn.example.com/story-photo.jpg',
+      },
+      {
+        id: '44444444-4444-4444-8444-444444444444',
+        title: 'Text Only Commentary',
+        category: 'Opinion & Framing',
+        excerpt: 'Editorial analysis without an image.',
+        featured_image_url: 'https://cdn.example.com/excluded-photo.jpg',
+      },
+    ],
+    excludedImageStoryIds: ['44444444-4444-4444-8444-444444444444'],
+  });
+
+  assert.match(digest.html, /<img src="https:\/\/frontlinedaily\.org\/frontline-daily-logo\.png" alt="Visual Sunday Digest" \/>/);
+  assert.match(digest.html, /<img src="https:\/\/cdn\.example\.com\/story-photo\.jpg" alt="Infrastructure Photo Report" \/>/);
+  assert.doesNotMatch(digest.html, /excluded-photo\.jpg/);
+});

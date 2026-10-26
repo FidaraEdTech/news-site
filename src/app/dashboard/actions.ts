@@ -730,3 +730,48 @@ export async function deleteStoryAction(formData: FormData) {
 
   redirect(`/dashboard/stories?notice=story-deleted`);
 }
+
+
+export async function uploadDigestImageAction(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const user = await requireAdminUser();
+
+  if (!hasSupabaseEnv()) {
+    return { ok: false, error: "Supabase storage is not configured." };
+  }
+
+  const rawFile = formData.get("image");
+  if (!isProvidedFile(rawFile)) {
+    return { ok: false, error: "Please choose an image file to upload." };
+  }
+
+  if (!isAllowedImageType(rawFile.type)) {
+    return { ok: false, error: "Please upload a valid image file (PNG, JPG, WebP, or GIF)." };
+  }
+
+  if (rawFile.size > MAX_IMAGE_FILE_SIZE) {
+    return { ok: false, error: "Image file must be 5 MB or smaller." };
+  }
+
+  if (!(await hasAllowedImageSignature(rawFile))) {
+    return { ok: false, error: "Unsupported image file signature." };
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const uploaded = await uploadStorageObject(
+      supabase,
+      STORY_IMAGE_BUCKET,
+      "digest",
+      user.id,
+      rawFile,
+    );
+    return { ok: true, url: uploaded.url };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to upload image.",
+    };
+  }
+}

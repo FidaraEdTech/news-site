@@ -14,7 +14,7 @@ export async function GET() {
       const supabase = await createSupabaseServerClient();
       const { data } = await supabase
         .from("stories")
-        .select("id, title, category, excerpt, byline, published_at, created_at")
+        .select("id, title, category, excerpt, byline, featured_image_url, photo_desk_items, published_at, created_at")
         .eq("status", "published")
         .order("published_at", { ascending: false })
         .order("created_at", { ascending: false })
