@@ -28,7 +28,7 @@ export default async function SearchPage(
     let query = (await createSupabaseServerClient()).from("stories").select("*", { count: "exact" }).eq("status", "published");
     if (searchQuery) query = query.textSearch("search_vector", searchQuery, { config: "english" });
     if (author) query = query.eq("byline", author);
-    if (category) query = query.eq("category", category);
+    if (category) query = query.ilike("category", `%${category}%`);
     if (tag) query = query.contains("tags", [tag]);
     const result = await query.order("published_at", { ascending: false }).order("id").range((page - 1) * pageSize, page * pageSize - 1);
     unavailable = Boolean(result.error);

@@ -34,7 +34,7 @@ export function Navbar({ isAdmin, publishedCategories }: { isAdmin: boolean; pub
   }, [menuOpen]);
   function openMenu(event: React.MouseEvent<HTMLButtonElement>) { openerRef.current = event.currentTarget; setMenuOpen(true); }
   const primary = ["politics", "national", "security", "economy-and-business", "world"];
-  const deskLinks = [["Dashboard", "/dashboard"], ["Stories", "/dashboard/stories"], ["Photo Desk", "/dashboard/photo-desk"], ["Analytics", "/dashboard/analytics"], ["Settings", "/dashboard/settings"]];
+  const deskLinks = [["Dashboard", "/dashboard"], ["Stories", "/dashboard/stories"], ["Categories", "/dashboard/categories"], ["Photo Desk", "/dashboard/photo-desk"], ["Analytics", "/dashboard/analytics"], ["Settings", "/dashboard/settings"]];
   return <>
     {dashboard ? <header className="dashboard-navbar"><div className="dashboard-navbar-inner">
       <div className="dashboard-navbar-brand">

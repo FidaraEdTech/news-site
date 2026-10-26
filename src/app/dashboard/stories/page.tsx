@@ -7,6 +7,7 @@ import { StoryForm } from "@/components/StoryForm";
 import { AutoScroller } from "@/components/AutoScroller";
 import { SubmitButton } from "@/components/SubmitButton";
 import { requireAdminUser } from "@/lib/auth";
+import { parseStoryCategories } from "@/lib/categories";
 import { getCanonicalUrl } from "@/lib/site";
 import { getStoryImageUrl } from "@/lib/story-media";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -101,9 +102,17 @@ export default async function StoriesPage(props: StoriesPageProps) {
         </div>
       )}
       <div id="new-story" className="w-full mb-10">
-        <div className="bg-surface p-4 sm:p-6 lg:p-8 pb-4 rounded-t border border-b-0 border-border border-l-4 border-l-primary">
-          <h2 className="font-headline text-2xl sm:text-3xl font-black mb-2">Create a New Story</h2>
-          <p className="text-sm text-muted font-medium">Drafts are saved to the editorial workspace.</p>
+        <div className="bg-surface p-4 sm:p-6 lg:p-8 pb-4 rounded-t border border-b-0 border-border border-l-4 border-l-primary flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-headline text-2xl sm:text-3xl font-black mb-2">Create a New Story</h2>
+            <p className="text-sm text-muted font-medium">Drafts are saved to the editorial workspace.</p>
+          </div>
+          <Link
+            href="/dashboard/categories"
+            className="button secondary button-compact text-xs"
+          >
+            Manage Categories →
+          </Link>
         </div>
         <div className="bg-surface p-4 sm:p-6 lg:p-8 pt-0 rounded-b border border-t-0 border-border border-l-4 border-l-primary">
           <StoryForm action={saveStoryAction} title="" description="" />
@@ -111,7 +120,15 @@ export default async function StoriesPage(props: StoriesPageProps) {
       </div>
 
       <div className="bg-surface p-4 sm:p-6 lg:p-8 rounded border border-border">
-        <h2 className="font-headline text-xl sm:text-2xl font-bold mb-5 sm:mb-6 italic border-b border-border pb-4">Story Library</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-5 sm:mb-6 border-b border-border pb-4">
+          <h2 className="font-headline text-xl sm:text-2xl font-bold italic">Story Library</h2>
+          <Link
+            href="/dashboard/categories"
+            className="text-xs font-bold uppercase tracking-wider text-primary hover:underline"
+          >
+            Edit Categories Across Stories →
+          </Link>
+        </div>
 
         {storiesLoadFailed ? (
           <StatePanel title="Unavailable" description="Stories failed to load" eyebrow="Error" tone="error" />
@@ -119,78 +136,100 @@ export default async function StoriesPage(props: StoriesPageProps) {
           <StatePanel title="No stories yet" description="Start a draft below." eyebrow="Empty" tone="default" />
         ) : (
           <div className="flex flex-col gap-4">
-            {stories.map((story) => (
-              <details key={story.id} className="group bg-surface-muted border border-border rounded">
-                <summary className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 cursor-pointer hover:bg-surface-strong transition-colors list-none">
-                  <div className="flex flex-col gap-1 min-w-0 flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
-                      <StatusBadge status={story.status} />
-                      {story.story_type === "photo_desk" && (
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
-                          Photo Desk
-                        </span>
-                      )}
-                      <span className="font-bold text-lg font-headline truncate block min-w-0">{story.title}</span>
-                    </div>
-                    <span className="text-xs text-muted font-medium flex-shrink-0">
-                      Updated {dateTimeFormatter.format(new Date(story.updated_at))}
-                    </span>
-                  </div>
-                  <div className="text-xs font-bold uppercase tracking-widest text-primary group-open:hidden flex-shrink-0 md:ml-4">
-                    Edit Options v
-                  </div>
-                  <div className="text-xs font-bold uppercase tracking-widest text-primary hidden group-open:block flex-shrink-0 md:ml-4">
-                    Close ^
-                  </div>
-                </summary>
-                <div className="p-4 sm:p-6 border-t border-border bg-white flex flex-col gap-6">
-                  <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 bg-surface-muted p-4 rounded">
-                    <div className="text-xs text-muted flex flex-col sm:flex-row gap-2 sm:gap-4">
-                      <span><strong>Comments:</strong> {commentsLoadFailed ? "-" : commentCountsByStory[story.id] ?? 0}</span>
-                      <span><strong>Media:</strong> {getStoryImageUrl(story) ? "Featured image" : "No featured image"}</span>
-                      <span><strong>Gallery:</strong> {mediaByStory[story.id]?.length ?? 0}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      {story.status === "published" && (
-                        <>
-                          <Link
-                            href={`/story/${story.id}`}
-                            className="min-h-11 px-4 py-2 border border-border text-xs font-bold uppercase hover:bg-surface-strong inline-flex items-center justify-center"
-                          >
-                            View Live
-                          </Link>
-                          <ShareStoryButton
-                            title={story.title}
-                            text={story.excerpt}
-                            url={getCanonicalUrl(`/story/${story.id}`)}
-                            label="Copy Link"
-                            copiedLabel="Link copied"
-                            preferNativeShare={false}
-                            className="min-h-11 w-full sm:w-auto px-4 py-2 border border-border text-xs font-bold uppercase hover:bg-surface-strong inline-flex items-center justify-center text-primary"
-                          />
-                        </>
-                      )}
-                      {story.status !== "published" && (
-                        <span className="min-h-11 px-4 py-2 border border-border text-xs font-bold uppercase text-muted inline-flex items-center justify-center">
-                          Publish to share
-                        </span>
-                      )}
-                      <form action={deleteStoryAction}>
-                        <input type="hidden" name="story_id" value={story.id} />
-                        <SubmitButton
-                          className="min-h-11 w-full sm:w-auto px-4 py-2 bg-danger-soft text-danger text-xs font-bold uppercase hover:opacity-80"
-                          pendingLabel="Deleting..."
-                        >
-                          Delete
-                        </SubmitButton>
-                      </form>
-                    </div>
-                  </div>
+            {stories.map((story) => {
+              const storyCategories = parseStoryCategories(story.category);
+              const editPageHref =
+                story.story_type === "photo_desk"
+                  ? `/dashboard/photo-desk/${story.id}`
+                  : `/dashboard/stories/${story.id}`;
 
-                  <StoryForm action={saveStoryAction} story={story} gallery={mediaByStory[story.id] ?? []} title="Edit Story" description="" />
-                </div>
-              </details>
-            ))}
+              return (
+                <details key={story.id} className="group bg-surface-muted border border-border rounded">
+                  <summary className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 cursor-pointer hover:bg-surface-strong transition-colors list-none">
+                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0">
+                        <StatusBadge status={story.status} />
+                        {story.story_type === "photo_desk" && (
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-accent-soft text-primary border border-border flex-shrink-0">
+                            Photo Desk
+                          </span>
+                        )}
+                        <span className="font-bold text-lg font-headline truncate block min-w-0">{story.title}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted font-medium">
+                        <span>Updated {dateTimeFormatter.format(new Date(story.updated_at))}</span>
+                        {storyCategories.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="text-on-surface font-semibold">
+                              {storyCategories.join(", ")}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-primary group-open:hidden flex-shrink-0 md:ml-4">
+                      Edit Options v
+                    </div>
+                    <div className="text-xs font-bold uppercase tracking-widest text-primary hidden group-open:block flex-shrink-0 md:ml-4">
+                      Close ^
+                    </div>
+                  </summary>
+                  <div className="p-4 sm:p-6 border-t border-border bg-white flex flex-col gap-6">
+                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 bg-surface-muted p-4 rounded">
+                      <div className="text-xs text-muted flex flex-col sm:flex-row gap-2 sm:gap-4">
+                        <span><strong>Comments:</strong> {commentsLoadFailed ? "-" : commentCountsByStory[story.id] ?? 0}</span>
+                        <span><strong>Media:</strong> {getStoryImageUrl(story) ? "Featured image" : "No featured image"}</span>
+                        <span><strong>Gallery:</strong> {mediaByStory[story.id]?.length ?? 0}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <Link
+                          href={editPageHref}
+                          className="min-h-11 px-4 py-2 bg-primary text-white text-xs font-bold uppercase hover:opacity-90 inline-flex items-center justify-center rounded"
+                        >
+                          Edit on Separate Page →
+                        </Link>
+                        {story.status === "published" && (
+                          <>
+                            <Link
+                              href={`/story/${story.id}`}
+                              className="min-h-11 px-4 py-2 border border-border text-xs font-bold uppercase hover:bg-surface-strong inline-flex items-center justify-center"
+                            >
+                              View Live
+                            </Link>
+                            <ShareStoryButton
+                              title={story.title}
+                              text={story.excerpt}
+                              url={getCanonicalUrl(`/story/${story.id}`)}
+                              label="Copy Link"
+                              copiedLabel="Link copied"
+                              preferNativeShare={false}
+                              className="min-h-11 w-full sm:w-auto px-4 py-2 border border-border text-xs font-bold uppercase hover:bg-surface-strong inline-flex items-center justify-center text-primary"
+                            />
+                          </>
+                        )}
+                        {story.status !== "published" && (
+                          <span className="min-h-11 px-4 py-2 border border-border text-xs font-bold uppercase text-muted inline-flex items-center justify-center">
+                            Publish to share
+                          </span>
+                        )}
+                        <form action={deleteStoryAction}>
+                          <input type="hidden" name="story_id" value={story.id} />
+                          <SubmitButton
+                            className="min-h-11 w-full sm:w-auto px-4 py-2 bg-danger-soft text-danger text-xs font-bold uppercase hover:opacity-80"
+                            pendingLabel="Deleting..."
+                          >
+                            Delete
+                          </SubmitButton>
+                        </form>
+                      </div>
+                    </div>
+
+                    <StoryForm action={saveStoryAction} story={story} gallery={mediaByStory[story.id] ?? []} title="Edit Story" description="" />
+                  </div>
+                </details>
+              );
+            })}
           </div>
         )}
       </div>

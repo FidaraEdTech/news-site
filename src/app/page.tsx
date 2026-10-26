@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/metadata";
-import { normalizeCategory, categorySlug, isMainCategory } from "@/lib/categories";
+import { normalizeCategory, categorySlug, isMainCategory, storyMatchesCategory } from "@/lib/categories";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/site";
 import Link from "next/link";
 import { StatePanel } from "@/components/StatePanel";
@@ -126,7 +126,7 @@ export default async function HomePage(props: HomePageProps) {
     ? normalizeCategory(selectedCategory.replace(/-/g, " "))
     : null;
   const visibleStories = selectedCategory
-    ? stories.filter((story) => categorySlug(normalizeCategory(story.category)) === categorySlug(normalizeCategory(selectedCategory)))
+    ? stories.filter((story) => storyMatchesCategory(story, selectedCategory))
     : stories;
 
   const editorialStories = visibleStories.filter(

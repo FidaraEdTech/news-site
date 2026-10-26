@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdminUser } from "@/lib/auth";
-import { isMainCategory, normalizeCategory, parseTags } from "@/lib/categories";
+import { categorySlug, formatStoryCategories, isValidCategoryName, normalizeCategory, parseStoryCategories, parseTags } from "@/lib/categories";
 import { sanitizeStoryHtml, storyText } from "@/lib/story-content";
 import {
   MAX_IMAGE_FILE_SIZE,
@@ -320,7 +320,7 @@ function validateStoryFields(input: {
     title.length < 3 ||
     title.length > 180 ||
     category.length < 2 ||
-    category.length > 80 ||
+    category.length > 240 ||
     (location !== null && location.length > 120) ||
     excerpt.length > 280
   ) {
@@ -360,16 +360,24 @@ export async function saveStoryAction(formData: FormData) {
     readText(formData, "intent") === "publish" ? "published" : "draft";
 
   const title = readText(formData, "title");
-  const category = normalizeCategory(readText(formData, "category"));
+  const rawCategory = readText(formData, "category") || readText(formData, "category_picker");
+  const parsedCategories = parseStoryCategories(rawCategory);
+  const category = formatStoryCategories(parsedCategories);
   const excerpt = readText(formData, "excerpt");
   const contentFormat = readText(formData, "content_format") === "html" ? "html" : "plain";
   const rawContent = readText(formData, "content");
   if (rawContent.length > 200000) redirectToDashboard("error=story-validation");
   const content = contentFormat === "html" ? sanitizeStoryHtml(rawContent) : rawContent;
   const byline = readOptionalText(formData, "byline");
+  const rawTagsText = readText(formData, "tags");
   let tags: string[] = [];
-  try { tags = parseTags(readText(formData, "tags")); } catch { redirectToDashboard("error=story-validation"); }
-  if (!isMainCategory(category) || (byline && byline.length > 120)) {
+  try {
+    tags = parseTags(rawTagsText);
+  } catch {
+    const fallbackTags = rawTagsText.split(",").map((t) => t.trim().slice(0, 40)).filter(Boolean).slice(0, 10).join(", ");
+    try { tags = parseTags(fallbackTags); } catch { tags = []; }
+  }
+  if (parsedCategories.length === 0 || !parsedCategories.every(isValidCategoryName) || (byline && byline.length > 120)) {
     redirectToDashboard("error=story-validation");
   }
 
@@ -774,4 +782,156 @@ export async function uploadDigestImageAction(
       error: err instanceof Error ? err.message : "Failed to upload image.",
     };
   }
+}
+
+
+export async function updateStoryCategoriesAction(
+  formData: FormData,
+): Promise<{ ok: boolean; category?: string; error?: string }> {
+  if (!hasSupabaseEnv()) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  const user = await requireAdminUser();
+  const supabase = await createSupabaseServerClient();
+  const storyId = readText(formData, "story_id");
+  const rawCategory = readText(formData, "category");
+  const parsedCategories = parseStoryCategories(rawCategory);
+
+  if (!storyId) {
+    return { ok: false, error: "Story ID is required." };
+  }
+
+  if (parsedCategories.length === 0 || !parsedCategories.every(isValidCategoryName)) {
+    return { ok: false, error: "Please assign at least one valid category (2-60 characters each)." };
+  }
+
+  const formattedCategory = formatStoryCategories(parsedCategories);
+
+  const { error } = await supabase
+    .from("stories")
+    .update({ category: formattedCategory })
+    .eq("id", storyId)
+    .eq("author_id", user.id);
+
+  if (error) {
+    return { ok: false, error: error.message || "Failed to update story categories." };
+  }
+
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/stories");
+  revalidatePath("/dashboard/categories");
+  revalidatePath(`/dashboard/stories/${storyId}`);
+  revalidatePath(`/story/${storyId}`);
+
+  return { ok: true, category: formattedCategory };
+}
+
+export async function renameCategoryAcrossStoriesAction(
+  formData: FormData,
+): Promise<{ ok: boolean; updatedCount?: number; newCategory?: string; error?: string }> {
+  if (!hasSupabaseEnv()) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  const user = await requireAdminUser();
+  const supabase = await createSupabaseServerClient();
+  const oldCategory = readText(formData, "old_category");
+  const newCategoryRaw = readText(formData, "new_category");
+  const newCategory = normalizeCategory(newCategoryRaw);
+
+  if (!oldCategory || !isValidCategoryName(newCategory)) {
+    return { ok: false, error: "Please provide a valid category name (2-60 characters)." };
+  }
+
+  const oldSlug = categorySlug(oldCategory);
+  if (!oldSlug) {
+    return { ok: false, error: "Invalid source category." };
+  }
+
+  const { data: stories, error: fetchError } = await supabase
+    .from("stories")
+    .select("id, category")
+    .eq("author_id", user.id);
+
+  if (fetchError) {
+    return { ok: false, error: fetchError.message || "Failed to load stories." };
+  }
+
+  let updatedCount = 0;
+  for (const story of stories ?? []) {
+    const cats = parseStoryCategories(story.category);
+    if (cats.some((c) => categorySlug(c) === oldSlug)) {
+      const updatedCats = cats.map((c) => (categorySlug(c) === oldSlug ? newCategory : c));
+      const formatted = formatStoryCategories(updatedCats);
+      const { error: updateErr } = await supabase
+        .from("stories")
+        .update({ category: formatted })
+        .eq("id", story.id)
+        .eq("author_id", user.id);
+      if (!updateErr) {
+        updatedCount += 1;
+      }
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/stories");
+  revalidatePath("/dashboard/categories");
+
+  return { ok: true, updatedCount, newCategory };
+}
+
+export async function deleteCategoryAcrossStoriesAction(
+  formData: FormData,
+): Promise<{ ok: boolean; updatedCount?: number; error?: string }> {
+  if (!hasSupabaseEnv()) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  const user = await requireAdminUser();
+  const supabase = await createSupabaseServerClient();
+  const targetCategory = readText(formData, "target_category");
+  const fallbackCategory = normalizeCategory(readText(formData, "fallback_category") || "Public Affairs");
+
+  const targetSlug = categorySlug(targetCategory);
+  if (!targetSlug) {
+    return { ok: false, error: "Invalid category to delete." };
+  }
+
+  const { data: stories, error: fetchError } = await supabase
+    .from("stories")
+    .select("id, category")
+    .eq("author_id", user.id);
+
+  if (fetchError) {
+    return { ok: false, error: fetchError.message || "Failed to load stories." };
+  }
+
+  let updatedCount = 0;
+  for (const story of stories ?? []) {
+    const cats = parseStoryCategories(story.category);
+    if (cats.some((c) => categorySlug(c) === targetSlug)) {
+      const remaining = cats.filter((c) => categorySlug(c) !== targetSlug);
+      const nextCats = remaining.length > 0 ? remaining : [fallbackCategory];
+      const formatted = formatStoryCategories(nextCats);
+      const { error: updateErr } = await supabase
+        .from("stories")
+        .update({ category: formatted })
+        .eq("id", story.id)
+        .eq("author_id", user.id);
+      if (!updateErr) {
+        updatedCount += 1;
+      }
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/stories");
+  revalidatePath("/dashboard/categories");
+
+  return { ok: true, updatedCount };
 }

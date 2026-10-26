@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { normalizeCategory, isMainCategory } from "@/lib/categories";
+import { formatStoryCategories, isValidCategoryName, parseStoryCategories } from "@/lib/categories";
 import { requireAdminUser } from "@/lib/auth";
 import {
   MAX_IMAGE_FILE_SIZE,
@@ -60,12 +60,14 @@ export async function savePhotoDeskAction(formData: FormData) {
   const storyId = readText(formData, "story_id");
   const intent = readText(formData, "intent");
   const title = readText(formData, "title");
-  const category = normalizeCategory(readText(formData, "category"));
+  const rawCategory = readText(formData, "category") || readText(formData, "category_picker");
+  const parsedCategories = parseStoryCategories(rawCategory);
+  const category = formatStoryCategories(parsedCategories);
   const location = readOptionalText(formData, "location");
   const isBreaking = formData.get("is_breaking") === "on";
   const breakingLabel = readOptionalText(formData, "breaking_label");
 
-  if (!title || title.length < 3 || !isMainCategory(category)) {
+  if (!title || title.length < 3 || parsedCategories.length === 0 || !parsedCategories.every(isValidCategoryName)) {
     redirectToDashboard("error=validation");
   }
 

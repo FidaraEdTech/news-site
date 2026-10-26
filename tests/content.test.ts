@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { sanitizeStoryHtml, storyHtml } from '../src/lib/story-content';
-import { CATEGORIES, normalizeCategory, parseTags } from '../src/lib/categories';
+import {
+  CATEGORIES,
+  formatStoryCategories,
+  isValidCategoryName,
+  normalizeCategory,
+  parseStoryCategories,
+  parseTags,
+  storyMatchesCategory,
+} from '../src/lib/categories';
 
 test('published rich text strips scripts, attributes and unsafe URLs', () => {
  const html=sanitizeStoryHtml('<p onclick="alert(1)"><strong>News</strong><script>alert(1)</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">bad</a><iframe src="https://evil.example"></iframe><small>Note</small></p>');
@@ -22,6 +30,15 @@ test('categories normalize known aliases and preserve unknown legacy values',()=
  assert.equal(normalizeCategory('Government / Health'),'Health');
  assert.equal(normalizeCategory('National News / Security'),'Security');
  assert.equal(normalizeCategory('Report'),'Report');
+});
+test('multi-category stories parse, deduplicate, format and match across sections',()=>{
+ assert.deepEqual(parseStoryCategories('Politics, Security, politics, Custom Beats'), ['Politics', 'Security', 'Custom Beats']);
+ assert.equal(formatStoryCategories(['Politics', 'Security', 'Politics']), 'Politics, Security');
+ assert.equal(storyMatchesCategory({ category: 'Politics, Security, Sports' }, 'security'), true);
+ assert.equal(storyMatchesCategory({ category: 'Politics, Security, Sports' }, 'sports'), true);
+ assert.equal(storyMatchesCategory({ category: 'Politics, Security' }, 'health'), false);
+ assert.equal(isValidCategoryName('Sports & Athletics'), true);
+ assert.equal(isValidCategoryName('A'), false);
 });
 test('tags are normalized and constrained',()=>{
  assert.deepEqual(parseTags(' Budget, budget , Public   Health '),['budget','public health']);

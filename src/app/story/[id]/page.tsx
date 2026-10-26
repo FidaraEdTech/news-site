@@ -12,6 +12,7 @@ import { StatePanel } from "@/components/StatePanel";
 import { SubscribeForm } from "@/components/SubscribeForm";
 import { ViewTracker } from "@/components/ViewTracker";
 import { getCurrentAdminSession } from "@/lib/auth";
+import { categorySlug, parseStoryCategories } from "@/lib/categories";
 import { getCanonicalUrl, getSiteUrl, SITE_NAME, toJsonLd } from "@/lib/site";
 import {
   getStoryGalleryCount,
@@ -306,9 +307,11 @@ export default async function StoryPage(props: StoryPageProps) {
         {/* Article Header Section */}
         <header className="max-w-4xl mx-auto mb-8 sm:mb-12">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5 sm:mb-6">
-            <span className="bg-primary text-on-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
-              {story.category}
-            </span>
+            {parseStoryCategories(story.category).map((cat) => (
+              <Link key={cat} href={`/?category=${encodeURIComponent(categorySlug(cat))}`} className="bg-primary text-on-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest hover:opacity-90">
+                {cat}
+              </Link>
+            ))}
             {story.location && (
               <span className="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest">
                 {story.location}
