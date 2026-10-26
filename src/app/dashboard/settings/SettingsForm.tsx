@@ -30,10 +30,10 @@ export default function SettingsForm({ settings }: { settings: SiteSettings | nu
       </fieldset>
       <fieldset disabled={isPending} className="settings-fieldset">
         <legend>The Curator’s Digest</legend>
-        <div className="field"><label htmlFor="newsletter-url">Substack publication address</label><input id="newsletter-url" name="newsletter_url" type="url" placeholder="https://yourpublication.substack.com" defaultValue={settings?.newsletter_url || ""} aria-describedby="newsletter-url-help"/>
-          <p id="newsletter-url-help" className="field-hint">Create your publication in Substack, then paste its address here. The website will show the signup form automatically. Leave this blank until it’s ready.</p>
+        <div className="field"><label htmlFor="newsletter-url">Substack publication address</label><input id="newsletter-url" name="newsletter_url" type="url" placeholder="https://frontlinedaily.substack.com or https://substack.com/@frontlinedaily" defaultValue={settings?.newsletter_url || ""} aria-describedby="newsletter-url-help"/>
+          <p id="newsletter-url-help" className="field-hint">Enter your Substack publication address (e.g. https://frontlinedaily.substack.com or https://substack.com/@frontlinedaily). The website will show the signup form automatically. Leave this blank until it’s ready.</p>
         </div>
-        <p className="field-hint">Prepare each edition in Substack, select your stories and schedule it for Sunday using Africa/Lagos time. This setting connects subscriptions; it does not send or schedule editions.</p>
+        <p className="field-hint">Prepare each edition in The Curator’s Digest Studio on the Dashboard, then send via Gmail and/or Substack (@frontlinedaily) for Sunday using Africa/Lagos time.</p>
       </fieldset>
       <fieldset disabled={isPending} className="settings-fieldset">
         <legend>Google Search Console</legend>

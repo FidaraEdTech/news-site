@@ -198,7 +198,7 @@ export function DigestBuilder({
     await copyRichDigest();
     const targetUrl = newsletterUrl
       ? `${newsletterUrl}/publish/post`
-      : "https://substack.com/publish/post";
+      : "https://frontlinedaily.substack.com/publish/post";
     window.open(targetUrl, "_blank", "noopener,noreferrer");
   }
 
@@ -286,7 +286,7 @@ export function DigestBuilder({
                 rel="noopener noreferrer"
                 className="button secondary button-compact text-xs"
               >
-                Open Substack Subscribers ↗
+                Open Substack Subscribers (@frontlinedaily) ↗
               </a>
             )}
           </div>
@@ -596,7 +596,7 @@ export function DigestBuilder({
                 disabled={selectedStories.length === 0}
                 className="button secondary text-xs"
               >
-                2. Copy &amp; Open Substack Editor ↗
+                2. Copy &amp; Open Substack (@frontlinedaily) ↗
               </button>
               <button
                 type="button"
