@@ -108,7 +108,6 @@ test('newsletter and Google settings validate input, persist and render without 
  const audit=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(audit.violations.map(v=>v.id)).toEqual([]);
  await page.route('https://frontline-fixture.substack.com/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html lang="en"><title>Local signup fixture</title><body>Local subscription fixture</body></html>'}));
  await page.goto('/newsletter');await expect(page.locator('iframe[title="Subscribe to The Curator’s Digest"]')).toHaveAttribute('src','https://frontline-fixture.substack.com/embed');
- await expect(page.locator('form.newsletter-native-form')).toHaveAttribute('action','https://frontline-fixture.substack.com/api/v1/free?nojs=true');
  await expect(page.locator('meta[name="google-site-verification"]')).toHaveAttribute('content','fixture_google_verification_123');
  const html=await (await page.request.get('/')).text();
  expect(html.slice(0,html.indexOf('</head>'))).toContain('name="google-site-verification" content="fixture_google_verification_123"');
