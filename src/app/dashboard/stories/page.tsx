@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CategoriesManagerClient } from "@/components/CategoriesManagerClient";
 import { InlineMessage } from "@/components/InlineMessage";
 import { ShareStoryButton } from "@/components/ShareStoryButton";
 import { StatePanel } from "@/components/StatePanel";
@@ -105,18 +106,23 @@ export default async function StoriesPage(props: StoriesPageProps) {
         <div className="bg-surface p-4 sm:p-6 lg:p-8 pb-4 rounded-t border border-b-0 border-border border-l-4 border-l-primary flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="font-headline text-2xl sm:text-3xl font-black mb-2">Create a New Story</h2>
-            <p className="text-sm text-muted font-medium">Drafts are saved to the editorial workspace.</p>
+            <p className="text-sm text-muted font-medium">Drafts are saved to the editorial workspace. You can select multiple categories or click + New to add a category.</p>
           </div>
           <Link
             href="/dashboard/categories"
-            className="button secondary button-compact text-xs"
+            className="px-4 py-2 rounded bg-primary text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
           >
-            Manage Categories →
+            Open Separate Categories Page →
           </Link>
         </div>
         <div className="bg-surface p-4 sm:p-6 lg:p-8 pt-0 rounded-b border border-t-0 border-border border-l-4 border-l-primary">
           <StoryForm action={saveStoryAction} title="" description="" />
         </div>
+      </div>
+
+      {/* Space for editing categories that have already been created */}
+      <div id="edit-categories" className="w-full mb-10">
+        <CategoriesManagerClient initialStories={stories} compact />
       </div>
 
       <div className="bg-surface p-4 sm:p-6 lg:p-8 rounded border border-border">
@@ -126,7 +132,7 @@ export default async function StoriesPage(props: StoriesPageProps) {
             href="/dashboard/categories"
             className="text-xs font-bold uppercase tracking-wider text-primary hover:underline"
           >
-            Edit Categories Across Stories →
+            Edit Categories Across All Stories →
           </Link>
         </div>
 

@@ -29,8 +29,10 @@ export type CategoryStoryItem = {
 
 export function CategoriesManagerClient({
   initialStories,
+  compact = false,
 }: {
   initialStories: CategoryStoryItem[];
+  compact?: boolean;
 }) {
   const [stories, setStories] = useState<CategoryStoryItem[]>(initialStories);
   const [customCategories, setCustomCategories] = useState<string[]>([]);
@@ -46,6 +48,10 @@ export function CategoriesManagerClient({
     text: string;
   } | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setStories(initialStories);
+  }, [initialStories]);
 
   useEffect(() => {
     try {
@@ -158,7 +164,7 @@ export function CategoriesManagerClient({
     setNewCategoryName("");
     setStatusMessage({
       type: "success",
-      text: `Added category "${normalized}". You can now assign it to any story below.`,
+      text: `Added category "${normalized}". It is now available in the category list and story editor.`,
     });
   };
 
@@ -190,7 +196,6 @@ export function CategoriesManagerClient({
         return;
       }
 
-      // Update local custom categories & defaults tracking
       if (CATEGORIES.some((c) => categorySlug(c) === oldSlug) && oldSlug !== newSlug) {
         if (!removedDefaults.some((c) => categorySlug(c) === oldSlug)) {
           saveRemovedDefaults([...removedDefaults, oldCat]);
@@ -205,7 +210,6 @@ export function CategoriesManagerClient({
       }
       saveCustomCategories(nextCustom);
 
-      // Update local stories state
       setStories((prev) =>
         prev.map((story) => {
           const cats = parseStoryCategories(story.category);
@@ -292,7 +296,6 @@ export function CategoriesManagerClient({
 
     const formatted = formatStoryCategories(nextCats);
 
-    // Optimistic update
     setStories((prev) =>
       prev.map((item) => (item.id === story.id ? { ...item, category: formatted } : item)),
     );
@@ -304,7 +307,6 @@ export function CategoriesManagerClient({
 
       const res = await updateStoryCategoriesAction(formData);
       if (!res.ok) {
-        // Revert on error
         setStories((prev) =>
           prev.map((item) =>
             item.id === story.id ? { ...item, category: story.category } : item,
@@ -385,11 +387,11 @@ export function CategoriesManagerClient({
       <section className="bg-surface-container-lowest border border-border rounded-lg p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div>
-            <h2 className="font-headline text-2xl font-bold text-on-surface">
-              1. Add, Rename, or Delete Categories
-            </h2>
+            <h3 className="font-headline text-2xl font-bold text-on-surface">
+              Add, Rename, or Delete Created Categories ({allCategories.length})
+            </h3>
             <p className="text-sm text-muted mt-1">
-              Create new categories, rename existing ones across all stories, or remove categories you no longer need.
+              Add new categories with the + button below, rename any existing category across all stories, or delete categories you no longer need.
             </p>
           </div>
           {removedDefaults.length > 0 && (
@@ -410,17 +412,18 @@ export function CategoriesManagerClient({
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
             maxLength={60}
-            placeholder="Enter new category name (e.g. Sports, Education, Environment, Health)..."
-            aria-label="New category name"
+            placeholder="Type a new category name (e.g. Sports, Education, Environment)..."
+            aria-label="Create new category"
             className="editor-input flex-1 min-w-[240px]"
             style={{ marginBottom: 0 }}
           />
           <button
             type="submit"
             disabled={isPending || newCategoryName.trim().length < 2}
-            className="button primary"
+            className="px-5 py-2.5 rounded bg-primary text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
           >
-            + Add Category
+            <span aria-hidden="true" className="text-base font-black leading-none">+</span>
+            <span>Add Category</span>
           </button>
         </form>
 
@@ -455,7 +458,7 @@ export function CategoriesManagerClient({
                         }
                       }}
                       aria-label={`Rename ${cat}`}
-                      className="editor-input text-sm"
+                      className="editor-input text-sm bg-white"
                       style={{ marginBottom: 0 }}
                     />
                     <div className="flex gap-2">
@@ -463,14 +466,14 @@ export function CategoriesManagerClient({
                         type="button"
                         disabled={isPending}
                         onClick={() => handleRenameCategory(cat)}
-                        className="button primary button-compact text-xs"
+                        className="px-3 py-1.5 rounded bg-primary text-white text-xs font-bold cursor-pointer"
                       >
                         Save Name
                       </button>
                       <button
                         type="button"
                         onClick={() => setRenamingCategory(null)}
-                        className="button secondary button-compact text-xs"
+                        className="px-3 py-1.5 rounded border border-border bg-white text-on-surface text-xs font-semibold cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -502,7 +505,7 @@ export function CategoriesManagerClient({
                         disabled={isPending}
                         className="text-xs font-bold px-2.5 py-1 rounded border border-border bg-white text-on-surface hover:border-primary cursor-pointer"
                       >
-                        Rename
+                        ✎ Edit
                       </button>
                       <button
                         type="button"
@@ -510,7 +513,7 @@ export function CategoriesManagerClient({
                         disabled={isPending}
                         className="text-xs font-bold px-2.5 py-1 rounded border border-border bg-danger-soft text-danger hover:opacity-90 cursor-pointer"
                       >
-                        Delete
+                        × Delete
                       </button>
                     </div>
                   </div>
@@ -521,179 +524,181 @@ export function CategoriesManagerClient({
         </div>
       </section>
 
-      {/* Section 2: Assign Multiple Categories to Stories */}
-      <section className="bg-surface-container-lowest border border-border rounded-lg p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="font-headline text-2xl font-bold text-on-surface">
-              2. Assign or Remove Categories on Stories
-            </h2>
-            <p className="text-sm text-muted mt-1">
-              Every story can belong to multiple categories. Click any category chip below a story to add (`+`) or remove (`×`) it immediately.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {selectedFilter !== "all" && (
-              <button
-                type="button"
-                onClick={() => setSelectedFilter("all")}
-                className="button secondary button-compact text-xs"
-              >
-                Clear category filter
-              </button>
-            )}
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter stories by title or category..."
-              aria-label="Filter stories"
-              className="editor-input text-sm w-64"
-              style={{ marginBottom: 0 }}
-            />
-          </div>
-        </div>
-
-        {filteredStories.length === 0 ? (
-          <p className="text-sm text-muted py-6 text-center">
-            No stories match the current filter.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {filteredStories.map((story) => {
-              const assignedCats = parseStoryCategories(story.category);
-              const unassignedCats = allCategories.filter(
-                (cat) => !assignedCats.some((a) => categorySlug(a) === categorySlug(cat)),
-              );
-
-              return (
-                <div
-                  key={story.id}
-                  className="p-4 rounded-lg border border-border bg-surface-muted space-y-3"
+      {/* Section 2: Assign Multiple Categories to Stories (shown on full /dashboard/categories page) */}
+      {!compact && (
+        <section className="bg-surface-container-lowest border border-border rounded-lg p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="font-headline text-2xl font-bold text-on-surface">
+                Assign or Remove Multiple Categories on Stories
+              </h3>
+              <p className="text-sm text-muted mt-1">
+                Every story can belong to multiple categories. Click any category chip below a story to add (+) or remove (×) it immediately.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {selectedFilter !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedFilter("all")}
+                  className="button secondary button-compact text-xs"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                            story.status === "published"
-                              ? "bg-success-soft text-success"
-                              : "bg-warning-soft text-warning"
-                          }`}
-                        >
-                          {story.status}
-                        </span>
-                        {story.story_type === "photo_desk" && (
-                          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-accent-soft text-primary">
-                            Photo Desk
+                  Clear category filter
+                </button>
+              )}
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter stories by title or category..."
+                aria-label="Filter stories"
+                className="editor-input text-sm w-64"
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+          </div>
+
+          {filteredStories.length === 0 ? (
+            <p className="text-sm text-muted py-6 text-center">
+              No stories match the current filter.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {filteredStories.map((story) => {
+                const assignedCats = parseStoryCategories(story.category);
+                const unassignedCats = allCategories.filter(
+                  (cat) => !assignedCats.some((a) => categorySlug(a) === categorySlug(cat)),
+                );
+
+                return (
+                  <div
+                    key={story.id}
+                    className="p-4 rounded-lg border border-border bg-surface-muted space-y-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
+                              story.status === "published"
+                                ? "bg-success-soft text-success"
+                                : "bg-warning-soft text-warning"
+                            }`}
+                          >
+                            {story.status}
                           </span>
-                        )}
+                          {story.story_type === "photo_desk" && (
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-accent-soft text-primary">
+                              Photo Desk
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-headline text-lg font-bold text-on-surface">
+                          {story.title}
+                        </h4>
                       </div>
-                      <h3 className="font-headline text-lg font-bold text-on-surface">
-                        {story.title}
-                      </h3>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={
-                          story.story_type === "photo_desk"
-                            ? `/dashboard/photo-desk/${story.id}`
-                            : `/dashboard/stories/${story.id}`
-                        }
-                        className="button secondary button-compact text-xs"
-                      >
-                        Edit Full Story →
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Assigned Categories */}
-                  <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface mb-1.5">
-                      Assigned Categories ({assignedCats.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {assignedCats.map((cat) => (
-                        <span
-                          key={cat}
-                          className="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-2.5 py-1 rounded"
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={
+                            story.story_type === "photo_desk"
+                              ? `/dashboard/photo-desk/${story.id}`
+                              : `/dashboard/stories/${story.id}`
+                          }
+                          className="px-3 py-1.5 rounded bg-primary text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
                         >
-                          <span>{cat}</span>
+                          Edit Full Story →
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Assigned Categories */}
+                    <div>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface mb-1.5">
+                        Assigned Categories ({assignedCats.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {assignedCats.map((cat) => (
+                          <span
+                            key={cat}
+                            className="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-2.5 py-1 rounded"
+                          >
+                            <span>{cat}</span>
+                            <button
+                              type="button"
+                              disabled={isPending}
+                              onClick={() => handleToggleStoryCategory(story, cat)}
+                              title={`Remove "${cat}" from this story`}
+                              aria-label={`Remove ${cat} from ${story.title}`}
+                              className="text-white hover:underline font-bold text-sm px-0.5 leading-none cursor-pointer"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Quick Add Existing Category + Inline Add Custom Category */}
+                    <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-muted mr-1">
+                          + Add to story:
+                        </span>
+                        {unassignedCats.map((cat) => (
                           <button
+                            key={cat}
                             type="button"
                             disabled={isPending}
                             onClick={() => handleToggleStoryCategory(story, cat)}
-                            title={`Remove "${cat}" from this story`}
-                            aria-label={`Remove ${cat} from ${story.title}`}
-                            className="text-white hover:underline font-bold text-sm px-0.5 leading-none cursor-pointer"
+                            className="text-xs font-semibold px-2 py-0.5 rounded border border-border bg-white text-on-surface hover:border-primary hover:text-primary cursor-pointer"
                           >
-                            ×
+                            + {cat}
                           </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                        ))}
+                      </div>
 
-                  {/* Quick Add Existing Category + Inline Add Custom Category */}
-                  <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-muted mr-1">
-                        + Add to story:
-                      </span>
-                      {unassignedCats.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          disabled={isPending}
-                          onClick={() => handleToggleStoryCategory(story, cat)}
-                          className="text-xs font-semibold px-2 py-0.5 rounded border border-border bg-white text-on-surface hover:border-primary hover:text-primary cursor-pointer"
-                        >
-                          + {cat}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        value={customPerStoryInput[story.id] ?? ""}
-                        onChange={(e) =>
-                          setCustomPerStoryInput((prev) => ({
-                            ...prev,
-                            [story.id]: e.target.value,
-                          }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddCustomCategoryToStory(story);
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={customPerStoryInput[story.id] ?? ""}
+                          onChange={(e) =>
+                            setCustomPerStoryInput((prev) => ({
+                              ...prev,
+                              [story.id]: e.target.value,
+                            }))
                           }
-                        }}
-                        placeholder="New category..."
-                        aria-label={`New category for ${story.title}`}
-                        className="editor-input text-xs py-1 px-2 w-40"
-                        style={{ marginBottom: 0 }}
-                      />
-                      <button
-                        type="button"
-                        disabled={
-                          isPending ||
-                          (customPerStoryInput[story.id] ?? "").trim().length < 2
-                        }
-                        onClick={() => handleAddCustomCategoryToStory(story)}
-                        className="button secondary button-compact text-xs"
-                      >
-                        + Add
-                      </button>
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddCustomCategoryToStory(story);
+                            }
+                          }}
+                          placeholder="New category..."
+                          aria-label={`New category for ${story.title}`}
+                          className="editor-input text-xs py-1 px-2 w-40 bg-white"
+                          style={{ marginBottom: 0 }}
+                        />
+                        <button
+                          type="button"
+                          disabled={
+                            isPending ||
+                            (customPerStoryInput[story.id] ?? "").trim().length < 2
+                          }
+                          onClick={() => handleAddCustomCategoryToStory(story)}
+                          className="px-3 py-1 rounded bg-primary text-white text-xs font-bold disabled:opacity-50 cursor-pointer"
+                        >
+                          + Add
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CATEGORIES,
   categorySlug,
@@ -24,9 +24,11 @@ export function CategorySelect({
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [removedDefaults, setRemovedDefaults] = useState<string[]>([]);
   const [newCategoryInput, setNewCategoryInput] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showAddBox, setShowAddBox] = useState(true);
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [manageMode, setManageMode] = useState(false);
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -111,15 +113,18 @@ export function CategorySelect({
   const removeFromStory = (cat: string) => {
     const slug = categorySlug(cat);
     setSelected((prev) => prev.filter((item) => categorySlug(item) !== slug));
-    if (editingIndex !== null) {
-      setEditingIndex(null);
+    if (editingCategory && categorySlug(editingCategory) === slug) {
+      setEditingCategory(null);
       setEditingValue("");
     }
   };
 
   const handleAddNewCategory = () => {
     const trimmed = newCategoryInput.trim().replace(/\s+/g, " ");
-    if (trimmed.length < 2 || trimmed.length > 60) return;
+    if (trimmed.length < 2 || trimmed.length > 60) {
+      addInputRef.current?.focus();
+      return;
+    }
 
     const normalized = normalizeCategory(trimmed);
     const slug = categorySlug(normalized);
@@ -146,45 +151,49 @@ export function CategorySelect({
     setNewCategoryInput("");
   };
 
-  const startEditingCategory = (index: number, currentLabel: string) => {
-    setEditingIndex(index);
-    setEditingValue(currentLabel);
+  const startEditingCategory = (cat: string) => {
+    setEditingCategory(cat);
+    setEditingValue(cat);
   };
 
-  const saveEditedCategory = (index: number) => {
+  const saveEditedCategory = (oldCat: string) => {
     const trimmed = editingValue.trim().replace(/\s+/g, " ");
     if (trimmed.length < 2 || trimmed.length > 60) {
-      setEditingIndex(null);
+      setEditingCategory(null);
       return;
     }
-    const oldCat = selected[index];
     const normalized = normalizeCategory(trimmed);
+    const oldSlug = categorySlug(oldCat);
+    const newSlug = categorySlug(normalized);
 
     setSelected((prev) => {
-      const next = [...prev];
-      next[index] = normalized;
+      if (!prev.some((c) => categorySlug(c) === oldSlug)) return prev;
+      const next = prev.map((c) => (categorySlug(c) === oldSlug ? normalized : c));
       return parseStoryCategories(next.join(", "));
     });
 
-    // Also update in customCategories if applicable
-    if (oldCat) {
-      const oldSlug = categorySlug(oldCat);
-      if (customCategories.some((c) => categorySlug(c) === oldSlug)) {
-        saveCustomCategories(
-          customCategories.map((c) => (categorySlug(c) === oldSlug ? normalized : c)),
-        );
-      } else if (!CATEGORIES.some((c) => categorySlug(c) === categorySlug(normalized))) {
-        saveCustomCategories([...customCategories, normalized]);
+    // If renaming a default category, mark old default removed and add new to custom
+    if (CATEGORIES.some((c) => categorySlug(c) === oldSlug) && oldSlug !== newSlug) {
+      if (!removedDefaults.some((c) => categorySlug(c) === oldSlug)) {
+        saveRemovedDefaults([...removedDefaults, oldCat]);
       }
     }
 
-    setEditingIndex(null);
+    const nextCustom = customCategories.filter((c) => categorySlug(c) !== oldSlug);
+    if (
+      !CATEGORIES.some((c) => categorySlug(c) === newSlug) &&
+      !nextCustom.some((c) => categorySlug(c) === newSlug)
+    ) {
+      nextCustom.push(normalized);
+    }
+    saveCustomCategories(nextCustom);
+
+    setEditingCategory(null);
     setEditingValue("");
   };
 
   const deleteCategoryFromList = (cat: string) => {
     const slug = categorySlug(cat);
-    // Remove from story selection as well
     setSelected((prev) => prev.filter((item) => categorySlug(item) !== slug));
 
     if (customCategories.some((c) => categorySlug(c) === slug)) {
@@ -212,39 +221,88 @@ export function CategorySelect({
           onClick={() => setManageMode((prev) => !prev)}
           className="text-[11px] font-bold text-primary underline cursor-pointer"
         >
-          {manageMode ? "Done managing categories" : "Edit / Manage categories"}
+          {manageMode ? "Done editing category list" : "Edit / Delete categories"}
         </button>
       </div>
 
-      {/* Primary accessible select (also supports Playwright getByLabel('Main category').selectOption) */}
-      <select
-        id={id}
-        name="category_picker"
-        required={selected.length === 0}
-        value={availableCategories.includes(primarySelectValue) ? primarySelectValue : ""}
-        onChange={(e) => {
-          const picked = e.target.value;
-          if (!picked) return;
-          setSelected((prev) => {
-            if (prev.some((item) => categorySlug(item) === categorySlug(picked))) {
-              return prev;
-            }
-            return [...prev, picked];
-          });
-        }}
-        className="editor-input mb-2"
-      >
-        <option value="" disabled>
-          Choose or add a category ({selected.length} selected)
-        </option>
-        {availableCategories.map((name) => (
-          <option key={name} value={name}>
-            {name}
+      {/* Category Select Dropdown + Plus (+) Icon Button right beside it */}
+      <div className="flex items-stretch gap-2 mb-2.5">
+        <select
+          id={id}
+          name="category_picker"
+          required={selected.length === 0}
+          value={availableCategories.includes(primarySelectValue) ? primarySelectValue : ""}
+          onChange={(e) => {
+            const picked = e.target.value;
+            if (!picked) return;
+            setSelected((prev) => {
+              if (prev.some((item) => categorySlug(item) === categorySlug(picked))) {
+                return prev;
+              }
+              return [...prev, picked];
+            });
+          }}
+          className="editor-input flex-1"
+          style={{ marginBottom: 0 }}
+        >
+          <option value="" disabled>
+            Choose category ({selected.length} selected)
           </option>
-        ))}
-      </select>
+          {availableCategories.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
 
-      {/* Active Categories Assigned to This Story (with Edit & Delete buttons) */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddBox(true);
+            setTimeout(() => addInputRef.current?.focus(), 20);
+          }}
+          title="Add a new category"
+          aria-label="Add new category"
+          className="px-3.5 py-2 rounded border border-primary bg-primary text-white font-bold text-base leading-none flex items-center justify-center gap-1 hover:opacity-90 cursor-pointer flex-shrink-0"
+        >
+          <span aria-hidden="true" className="text-lg font-black leading-none">+</span>
+          <span className="text-xs font-bold uppercase tracking-wider">New</span>
+        </button>
+      </div>
+
+      {/* Add New Custom Category Input Box (with + button) */}
+      {showAddBox && (
+        <div className="flex gap-2 items-center mb-3 p-2 rounded border border-border bg-surface-muted">
+          <input
+            ref={addInputRef}
+            type="text"
+            value={newCategoryInput}
+            onChange={(e) => setNewCategoryInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddNewCategory();
+              }
+            }}
+            maxLength={60}
+            placeholder="Type a new category name (e.g. Sports, Education) & click +"
+            aria-label="New category name"
+            className="editor-input text-xs flex-1 bg-white"
+            style={{ marginBottom: 0 }}
+          />
+          <button
+            type="button"
+            onClick={handleAddNewCategory}
+            disabled={newCategoryInput.trim().length < 2}
+            className="px-3 py-2 rounded bg-primary text-white font-bold text-xs uppercase tracking-wider disabled:opacity-50 cursor-pointer flex items-center gap-1 flex-shrink-0"
+          >
+            <span aria-hidden="true" className="text-sm font-black leading-none">+</span>
+            <span>Add Category</span>
+          </button>
+        </div>
+      )}
+
+      {/* Active Categories Assigned to This Story (with Edit & Remove buttons) */}
       <div className="mb-3">
         <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface mb-1.5">
           Assigned to this story ({selected.length}):
@@ -252,83 +310,85 @@ export function CategorySelect({
 
         {selected.length === 0 ? (
           <p className="text-xs text-muted italic">
-            No category selected yet. Pick one or more categories below, or add a new category.
+            No category selected yet. Choose one or more categories below, or add a new category above.
           </p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
-            {selected.map((cat, idx) =>
-              editingIndex === idx ? (
-                <div
-                  key={`${cat}-${idx}`}
-                  className="inline-flex items-center gap-1 bg-surface-muted border border-primary rounded px-2 py-1"
+            {selected.map((cat) => (
+              <span
+                key={cat}
+                className="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-2.5 py-1 rounded"
+              >
+                <span>{cat}</span>
+                <button
+                  type="button"
+                  onClick={() => startEditingCategory(cat)}
+                  title={`Rename "${cat}"`}
+                  aria-label={`Rename ${cat} category`}
+                  className="text-white hover:underline text-xs px-0.5 leading-none cursor-pointer"
                 >
-                  <input
-                    type="text"
-                    value={editingValue}
-                    onChange={(e) => setEditingValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        saveEditedCategory(idx);
-                      } else if (e.key === "Escape") {
-                        setEditingIndex(null);
-                      }
-                    }}
-                    aria-label={`Edit category ${cat}`}
-                    className="text-xs px-1.5 py-0.5 border border-border rounded bg-white text-on-surface w-36"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => saveEditedCategory(idx)}
-                    className="text-[11px] font-bold text-primary px-1.5 py-0.5 hover:underline"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingIndex(null)}
-                    className="text-[11px] text-on-surface px-1 py-0.5 hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <span
-                  key={cat}
-                  className="inline-flex items-center gap-1.5 bg-primary text-white text-xs font-bold px-2.5 py-1 rounded"
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeFromStory(cat)}
+                  title={`Remove "${cat}" from this story`}
+                  aria-label={`Remove ${cat} from story`}
+                  className="text-white hover:underline font-bold text-sm px-0.5 leading-none cursor-pointer"
                 >
-                  <span>{cat}</span>
-                  <button
-                    type="button"
-                    onClick={() => startEditingCategory(idx, cat)}
-                    title={`Rename "${cat}"`}
-                    aria-label={`Rename ${cat} category`}
-                    className="text-white hover:underline text-xs px-0.5 leading-none cursor-pointer"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeFromStory(cat)}
-                    title={`Remove "${cat}" from this story`}
-                    aria-label={`Remove ${cat} from story`}
-                    className="text-white hover:underline font-bold text-sm px-0.5 leading-none cursor-pointer"
-                  >
-                    ×
-                  </button>
-                </span>
-              ),
-            )}
+                  ×
+                </button>
+              </span>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Multi-Category Quick Toggle Chips */}
-      <div className="p-2.5 rounded border border-border bg-surface-muted mb-2.5">
+      {/* Inline Rename Box when editing a category */}
+      {editingCategory && (
+        <div className="mb-3 p-2.5 rounded border border-primary bg-surface-muted flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-on-surface">
+            Rename &ldquo;{editingCategory}&rdquo;:
+          </span>
+          <input
+            type="text"
+            value={editingValue}
+            onChange={(e) => setEditingValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                saveEditedCategory(editingCategory);
+              } else if (e.key === "Escape") {
+                setEditingCategory(null);
+              }
+            }}
+            aria-label={`Edit category ${editingCategory}`}
+            className="editor-input text-xs bg-white flex-1 min-w-[150px]"
+            style={{ marginBottom: 0 }}
+          />
+          <button
+            type="button"
+            onClick={() => saveEditedCategory(editingCategory)}
+            className="px-2.5 py-1 rounded bg-primary text-white text-xs font-bold cursor-pointer"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingCategory(null)}
+            className="px-2 py-1 rounded border border-border bg-white text-on-surface text-xs font-semibold cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Multi-Category Quick Toggle Chips & Edit/Delete Controls */}
+      <div className="p-2.5 rounded border border-border bg-surface-muted">
         <span className="block text-[10px] font-bold uppercase tracking-wider text-on-surface mb-2">
           {manageMode
-            ? "Click × on any category to delete it from the list:"
-            : "Click to add or remove multiple categories for this story:"}
+            ? "Edit (✎) or Delete (×) any category below:"
+            : "Click to assign multiple categories to this story (or click ✎ to rename):"}
         </span>
         <div className="flex flex-wrap gap-1.5">
           {availableCategories.map((cat) => {
@@ -339,15 +399,24 @@ export function CategorySelect({
                   type="button"
                   onClick={() => toggleCategory(cat)}
                   aria-pressed={active}
-                  className={`text-xs font-semibold px-2.5 py-1 border transition-colors cursor-pointer ${
-                    manageMode ? "rounded-l" : "rounded"
-                  } ${
+                  className={`text-xs font-semibold px-2.5 py-1 border transition-colors cursor-pointer rounded-l ${
                     active
                       ? "bg-primary text-white border-primary"
                       : "bg-white text-on-surface border-border hover:border-primary"
                   }`}
                 >
                   {active ? `✓ ${cat}` : `+ ${cat}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEditingCategory(cat)}
+                  title={`Rename "${cat}"`}
+                  aria-label={`Edit ${cat} category name`}
+                  className={`text-xs px-1.5 py-1 bg-white text-on-surface border-y border-r border-border hover:text-primary cursor-pointer ${
+                    manageMode ? "" : "rounded-r"
+                  }`}
+                >
+                  ✎
                 </button>
                 {manageMode && (
                   <button
@@ -364,7 +433,7 @@ export function CategorySelect({
             );
           })}
         </div>
-        {manageMode && removedDefaults.length > 0 && (
+        {removedDefaults.length > 0 && (
           <button
             type="button"
             onClick={() => saveRemovedDefaults([])}
@@ -373,34 +442,6 @@ export function CategorySelect({
             Restore deleted default categories ({removedDefaults.length})
           </button>
         )}
-      </div>
-
-      {/* Add New Custom Category Input */}
-      <div className="flex gap-2 items-center">
-        <input
-          type="text"
-          value={newCategoryInput}
-          onChange={(e) => setNewCategoryInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleAddNewCategory();
-            }
-          }}
-          maxLength={60}
-          placeholder="Add a new category (e.g. Sports, Education, Energy)..."
-          aria-label="New category name"
-          className="editor-input text-xs flex-1"
-          style={{ marginBottom: 0 }}
-        />
-        <button
-          type="button"
-          onClick={handleAddNewCategory}
-          disabled={newCategoryInput.trim().length < 2}
-          className="button secondary button-compact text-xs flex-shrink-0"
-        >
-          + Add Category
-        </button>
       </div>
     </div>
   );

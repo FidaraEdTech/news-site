@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DigestBuilder } from "@/components/DigestBuilder";
 import { requireAdminUser } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site";
@@ -115,9 +116,31 @@ export default async function DashboardPage(props: DashboardPageProps) {
          </div>
       )}
 
-      <div className="bg-surface p-5 sm:p-8 rounded border border-border mb-6 sm:mb-8">
-         <h2 className="font-headline text-2xl sm:text-3xl font-bold mb-2">Editorial Dashboard</h2>
-         <p className="text-sm text-muted">Welcome back. Here is your platform overview.</p>
+      <div className="bg-surface p-5 sm:p-8 rounded border border-border mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="font-headline text-2xl sm:text-3xl font-bold mb-2">Editorial Dashboard</h2>
+          <p className="text-sm text-muted">Welcome back. Manage your stories, categories, and newsletter below.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/dashboard/stories#new-story"
+            className="px-4 py-2.5 rounded bg-primary text-white text-xs font-bold uppercase tracking-wider hover:opacity-90"
+          >
+            + Create New Story
+          </Link>
+          <Link
+            href="/dashboard/categories"
+            className="px-4 py-2.5 rounded border border-primary bg-accent-soft text-primary text-xs font-bold uppercase tracking-wider hover:opacity-90"
+          >
+            Edit &amp; Manage Categories
+          </Link>
+          <Link
+            href="/dashboard/stories"
+            className="px-4 py-2.5 rounded border border-border bg-white text-on-surface text-xs font-bold uppercase tracking-wider hover:border-primary"
+          >
+            Story Library
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
